@@ -3,6 +3,7 @@
 #include "std_msgs/msg/int16_multi_array.hpp"
 #include <geometry_msgs/msg/twist.hpp>
 #include <modbus/modbus.h>
+#include <cmath>
 
 using std::placeholders::_1;
 using namespace std::chrono_literals;
@@ -22,11 +23,12 @@ class kint_control : public rclcpp::Node
     void CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg);
     double pwm_to_analog(double pwm_value, double max_pwm_value, double max_analog_value);
     void plc_modbus(double left_plc, double right_plc);
+    double wrapping(float v);
 
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr CmdVelSub;
     rclcpp::Publisher<std_msgs::msg::Int16MultiArray>::SharedPtr PLCPublisher;
 
-    double K=163.3;  // twist factor
+    double K=300;  // twist factor
     double w=0.9; // distance between center of two wheel
 
     double left_pwm, right_pwm, left_plc, right_plc, dx, dy, dr;
@@ -86,13 +88,33 @@ void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
     dr = msg->angular.z;
 
     left_pwm = K*(( 1.0 * dx ) - (dr * w /2)); // pwm value 0 - 255
-    right_pwm = -K*(( 1.0 * dx ) + (dr * w /2)); // pwm value 0 -255
+    right_pwm = K*(( 1.0 * dx ) + (dr * w /2)); // pwm value 0 -255
+
+    left_pwm = wrapping(left_pwm);
+    right_pwm = wrapping(right_pwm);
+
 
     left_plc = pwm_to_analog(left_pwm, 255, 880);  // plc mx analog value 880
     right_plc = pwm_to_analog(right_pwm, 255, 880); // plc mx analog value 880
 
-    plc_modbus(left_plc, right_plc);
+    std::cout<<"left_pwm --- > "<<left_pwm<<" right_pwm ----> "<<right_pwm<<std::endl;
 
+    // plc_modbus(left_plc, right_plc);
+
+    // std_msgs::msg::Int16MultiArray message;
+    // message.data = {left_pwm, right_pwm, left_plc, right_plc};
+
+    // PLCPublisher->publish(message);
+
+}
+
+double kint_control::wrapping(float v)
+{
+  if(std::abs(v) > 255.0)
+  {
+    v = 255.0;
+  }
+  return v;
 }
 
 kint_control::~kint_control()
