@@ -17,8 +17,12 @@ class kint_control : public rclcpp::Node
         PLCPublisher = this->create_publisher<std_msgs::msg::Int16MultiArray>("plc_data", 10);
     }
   public:
+    ~kint_control();
+  public:
     void CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg);
     double pwm_to_analog(double pwm_value, double max_pwm_value, double max_analog_value);
+    void plc_modbus(double left_plc, double right_plc);
+
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr CmdVelSub;
     rclcpp::Publisher<std_msgs::msg::Int16MultiArray>::SharedPtr PLCPublisher;
 
@@ -26,6 +30,9 @@ class kint_control : public rclcpp::Node
     double w=0.9; // distance between center of two wheel
 
     double left_pwm, right_pwm, left_plc, right_plc, dx, dy, dr;
+    modbus_t *ctx = NULL;
+    
+    
 };
 
 double kint_control::pwm_to_analog(double pwm_value, double max_pwm_value, double max_analog_value) 
@@ -35,6 +42,41 @@ double kint_control::pwm_to_analog(double pwm_value, double max_pwm_value, doubl
     pwm_value = 61.0;
   }
   return (pwm_value / max_pwm_value) * max_analog_value;
+}
+
+void kint_control::plc_modbus(double left_plc, double right_plc)
+{
+    modbus_t *ctx_plc = NULL;
+    uint16_t motor_write_reg[2] = {};
+
+    int rc;
+
+    ctx_plc = modbus_new_rtu("/dev/ttyplc", 115200, 'N', 8, 1);
+    int status1 = modbus_connect(ctx_plc);
+
+    if (status1 == -1)
+    {
+        RCLCPP_ERROR(this->get_logger(), "PLC Connection failed");
+        modbus_close(ctx_plc);
+        modbus_free(ctx_plc);
+        return;
+    }
+
+    else
+    {
+      motor_write_reg[0] = left_plc;
+      motor_write_reg[1] = right_plc;
+
+      rc = modbus_set_slave(ctx_plc, 1);
+      rc = modbus_write_registers(ctx_plc, 4096, 2, motor_write_reg);
+
+      if (rc == -1)
+      {
+          RCLCPP_ERROR(this->get_logger(), "Failed to write data Plc for motor %s", modbus_strerror(errno));
+      }
+      modbus_close(ctx_plc);
+      modbus_free(ctx_plc);
+    }
 }
 
 void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
@@ -49,10 +91,15 @@ void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
     left_plc = pwm_to_analog(left_pwm, 255, 880);  // plc mx analog value 880
     right_plc = pwm_to_analog(right_pwm, 255, 880); // plc mx analog value 880
 
-    // ctx_plc = modbus_new_rtu("/dev/ttyplc", 115200, 'N', 8, 1);
+    plc_modbus(left_plc, right_plc);
 
+}
 
+kint_control::~kint_control()
+{
 
+    modbus_close(ctx);
+    modbus_free(ctx);
 }
 
 int main(int argc, char * argv[])
