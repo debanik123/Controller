@@ -1,8 +1,18 @@
 cmake_minimum_required(VERSION 3.8)
-project(Controller)
+project(controller)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+find_library(Modbus modbus)
+if (NOT Modbus)
+	message(FATAL_ERROR "Modbus library non found.\n"
+			    "  Install it first: \n"
+			    "  $ apt-get install libmodbus-dev\n"
+			    "  or\n"
+			    "  $ yum install libmodbus-dev")
+	return()
 endif()
 
 # find dependencies
@@ -10,14 +20,13 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
-# find_package(modbus REQUIRED)
+
 
 set(dependencies
 ament_cmake
 rclcpp
 std_msgs
 geometry_msgs
-# modbus
 )
 
 # uncomment the following section in order to fill in
@@ -39,6 +48,8 @@ ament_package()
 
 add_executable(kint_control src/kint_control.cpp)
 ament_target_dependencies(kint_control ${dependencies})
+target_link_libraries(kint_control -lmodbus)
+target_link_libraries(kint_control -lm)
 
 
 install(TARGETS

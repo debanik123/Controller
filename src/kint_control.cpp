@@ -2,7 +2,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include "std_msgs/msg/int16_multi_array.hpp"
 #include <geometry_msgs/msg/twist.hpp>
-// #include <modbus.h>
+#include <modbus/modbus.h>
 
 using std::placeholders::_1;
 using namespace std::chrono_literals;
@@ -30,7 +30,11 @@ class kint_control : public rclcpp::Node
 
 double kint_control::pwm_to_analog(double pwm_value, double max_pwm_value, double max_analog_value) 
 {
-    return (pwm_value / max_pwm_value) * max_analog_value;
+  if (pwm_value <= 61.0) 
+  {
+    pwm_value = 61.0;
+  }
+  return (pwm_value / max_pwm_value) * max_analog_value;
 }
 
 void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
