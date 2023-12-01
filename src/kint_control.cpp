@@ -24,6 +24,7 @@ class kint_control : public rclcpp::Node
     double pwm_to_analog(double pwm_value, double max_pwm_value, double max_analog_value);
     void plc_modbus(double left_plc, double right_plc);
     double wrapping(float v);
+    float mapFloat(float x, float in_min, float in_max, float out_min, float out_max);
 
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr CmdVelSub;
     rclcpp::Publisher<std_msgs::msg::Int16MultiArray>::SharedPtr PLCPublisher;
@@ -51,6 +52,12 @@ double kint_control::pwm_to_analog(double pwm_value, double max_pwm_value, doubl
   }
   return (pwm_value / max_pwm_value) * max_analog_value;
 }
+
+float kint_control::mapFloat(float x, float in_min, float in_max, float out_min, float out_max)
+{
+    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
 
 void kint_control::plc_modbus(double left_plc, double right_plc)
 {
@@ -107,8 +114,13 @@ void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
     // Print the calculated RPM values (replace with your motor control logic)
     RCLCPP_INFO(this->get_logger(), "Left Motor RPM: %d, Right Motor RPM: %d", left_motor_rpm, right_motor_rpm);
 
-    left_plc = pwm_to_analog(left_motor_rpm, 255, 880);  // plc mx analog value 880
-    right_plc = pwm_to_analog(right_motor_rpm, 255, 880); // plc mx analog value 880
+    left_plc = mapFloat(left_motor_rpm, -255, 255, 220, 880);
+    right_plc = mapFloat(right_motor_rpm, -255, 255, 220, 880);
+
+    RCLCPP_INFO(this->get_logger(), "Left Motor PLC: %f, Right Motor PLC: %f", left_plc, right_plc);
+    // left_plc = pwm_to_analog(left_motor_rpm, 255, 880);  // plc mx analog value 880
+    // right_plc = pwm_to_analog(right_motor_rpm, 255, 880); // plc mx analog value 880
+
 
     // std::cout<<"left_pwm --- > "<<left_pwm<<" right_pwm ----> "<<right_pwm<<std::endl;
 
