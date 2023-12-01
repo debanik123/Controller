@@ -28,8 +28,14 @@ class kint_control : public rclcpp::Node
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr CmdVelSub;
     rclcpp::Publisher<std_msgs::msg::Int16MultiArray>::SharedPtr PLCPublisher;
 
-    double K=300;  // twist factor
-    double w=0.9; // distance between center of two wheel
+    // double K=300;  // twist factor
+    // double r = 0.207; // wheel radius 
+    // double K = 60.0/(2 * 3.141592 * wheel_radius);
+    // double w = 0.9; // distance between center of two wheel
+
+    // Wheelbase and wheel radius parameters
+    double wheelbase = 0.9;  // Replace with your robot's wheelbase in meters
+    double wheel_radius = 0.207;  // Replace with your robot's wheel radius in meters
 
     double left_pwm, right_pwm, left_plc, right_plc, dx, dy, dr;
     modbus_t *ctx = NULL;
@@ -83,21 +89,28 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
 
 void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
 {
-    dx = msg->linear.x;
-    dy = msg->linear.y;
-    dr = msg->angular.z;
+    double linear_x = msg->linear.x;
+    double angular_z = msg->angular.z;
 
-    left_pwm = K*(( 1.0 * dx ) - (dr * w /2)); // pwm value 0 - 255
-    right_pwm = K*(( 1.0 * dx ) + (dr * w /2)); // pwm value 0 -255
+    // Calculate left and right wheel velocities (in m/s)
+    double left_wheel_vel = linear_x - (angular_z * wheelbase / 2.0);
+    double right_wheel_vel = linear_x + (angular_z * wheelbase / 2.0);
 
-    left_pwm = wrapping(left_pwm);
-    right_pwm = wrapping(right_pwm);
+    // Convert wheel velocities to RPM (assuming linear relationship)
+    int left_motor_rpm = static_cast<int>(left_wheel_vel / (2 * 3.141592 * wheel_radius) * 60);
+    int right_motor_rpm = static_cast<int>(right_wheel_vel / (2 * 3.141592 * wheel_radius) * 60);
 
+    // Ensure RPM values are within the valid range (-255 to 255)
+    left_motor_rpm = std::max(-255, std::min(255, left_motor_rpm));
+    right_motor_rpm = std::max(-255, std::min(255, right_motor_rpm));
 
-    left_plc = pwm_to_analog(left_pwm, 255, 880);  // plc mx analog value 880
-    right_plc = pwm_to_analog(right_pwm, 255, 880); // plc mx analog value 880
+    // Print the calculated RPM values (replace with your motor control logic)
+    RCLCPP_INFO(this->get_logger(), "Left Motor RPM: %d, Right Motor RPM: %d", left_motor_rpm, right_motor_rpm);
 
-    std::cout<<"left_pwm --- > "<<left_pwm<<" right_pwm ----> "<<right_pwm<<std::endl;
+    left_plc = pwm_to_analog(left_motor_rpm, 255, 880);  // plc mx analog value 880
+    right_plc = pwm_to_analog(right_motor_rpm, 255, 880); // plc mx analog value 880
+
+    // std::cout<<"left_pwm --- > "<<left_pwm<<" right_pwm ----> "<<right_pwm<<std::endl;
 
     // plc_modbus(left_plc, right_plc);
 
