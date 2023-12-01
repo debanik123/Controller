@@ -66,7 +66,7 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
 
     int rc;
 
-    ctx_plc = modbus_new_rtu("/dev/ttyplc", 115200, 'N', 8, 1);
+    ctx_plc = modbus_new_rtu("/dev/ttyUSB0", 115200, 'N', 8, 1);
     int status1 = modbus_connect(ctx_plc);
 
     if (status1 == -1)
@@ -83,7 +83,7 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
       motor_write_reg[1] = right_plc;
 
       rc = modbus_set_slave(ctx_plc, 1);
-      rc = modbus_write_registers(ctx_plc, 4096, 2, motor_write_reg);
+      rc = modbus_write_registers(ctx_plc, 4097, 2, motor_write_reg);
 
       if (rc == -1)
       {
@@ -124,12 +124,12 @@ void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
 
     // std::cout<<"left_pwm --- > "<<left_pwm<<" right_pwm ----> "<<right_pwm<<std::endl;
 
-    // plc_modbus(left_plc, right_plc);
+    plc_modbus(left_plc, right_plc);
 
-    // std_msgs::msg::Int16MultiArray message;
-    // message.data = {left_pwm, right_pwm, left_plc, right_plc};
+    std_msgs::msg::Int16MultiArray message;
+    message.data = {left_pwm, right_pwm, left_plc, right_plc};
 
-    // PLCPublisher->publish(message);
+    PLCPublisher->publish(message);
 
 }
 
