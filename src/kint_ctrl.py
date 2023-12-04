@@ -65,6 +65,12 @@ class KintControl(Node):
         finally:
             self.ctx_plc.close()
 
+    def rpm_to_voltage(self, rpm, max_rpm, min_voltage, max_voltage):
+        normalized_rpm = min(max(0, rpm), max_rpm)  # Ensure RPM is within valid range
+        normalized_voltage = ((normalized_rpm / max_rpm) * (max_voltage - min_voltage)) + min_voltage
+        return normalized_voltage
+
+
     def cmd_vel_callback(self, msg):
         linear_x = msg.linear.x
         angular_z = msg.angular.z
@@ -76,6 +82,18 @@ class KintControl(Node):
         # Convert wheel velocities to RPM (assuming linear relationship)
         left_motor_rpm = int(left_wheel_vel / (2 * math.pi * self.wheel_radius) * 60)
         right_motor_rpm = int(right_wheel_vel / (2 * math.pi * self.wheel_radius) * 60)
+
+        max_rpm = 255
+        # Set the voltage range (1 to 5 volts)
+        min_voltage = 1
+        max_voltage = 5
+
+        left_motor_voltage = self.rpm_to_voltage(left_motor_rpm, max_rpm, min_voltage, max_voltage)
+        right_motor_voltage = self.rpm_to_voltage(right_motor_rpm, max_rpm, min_voltage, max_voltage)
+
+        print("left_wheel_vel ---> ", left_wheel_vel, "right_wheel_vel ---> ", right_wheel_vel)
+        print("left_motor_rpm ---> ", left_motor_rpm, "right_motor_rpm ---> ", right_motor_rpm)
+        print("left_motor_voltage ---> ", left_motor_voltage, "right_motor_voltage ---> ", right_motor_voltage)
 
         # Ensure RPM values are within the valid range (-255 to 255)
         left_motor_rpm = max(-255, min(255, left_motor_rpm))
@@ -89,7 +107,7 @@ class KintControl(Node):
 
         # self.get_logger().info("Left Motor PLC: %f, Right Motor PLC: %f", self.left_plc, self.right_plc)
 
-        self.plc_modbus(self.left_plc, self.right_plc)
+        # self.plc_modbus(self.left_plc, self.right_plc)
 
         # message = Int16MultiArray(data=[self.left_pwm, self.right_pwm, self.left_plc, self.right_plc])
         # self.plc_publisher.publish(message)
