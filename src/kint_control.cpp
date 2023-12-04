@@ -118,7 +118,7 @@ void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
     }
     
 
-    else
+    else if(linear_x > 0.0)
     {
       // Calculate left and right wheel velocities (in m/s)
       double left_wheel_vel = linear_x - (angular_z * wheelbase / 2.0);
