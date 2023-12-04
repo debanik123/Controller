@@ -108,12 +108,12 @@ void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
     else if (angular_z > 0.0)
     {
       left_plc = 300.0;
-      right_plc = 700.0;
+      right_plc = 500.0;
     }
 
     else if (angular_z < 0.0)
     {
-      left_plc = 700.0;
+      left_plc = 500.0;
       right_plc = 300.0;
     }
     
