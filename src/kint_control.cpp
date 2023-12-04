@@ -14,7 +14,7 @@ class kint_control : public rclcpp::Node
     kint_control()
     : Node("kint_control_node")
     {
-        CmdVelSub = this->create_subscription<geometry_msgs::msg::Twist>("cmd_vel", 10, std::bind(&kint_control::CmdVelCb, this, _1));
+        CmdVelSub = this->create_subscription<geometry_msgs::msg::Twist>("cmd_vel", 1, std::bind(&kint_control::CmdVelCb, this, _1));
         PLCPublisher = this->create_publisher<std_msgs::msg::Int16MultiArray>("plc_data", 10);
     }
   public:
@@ -105,20 +105,20 @@ void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
       left_plc = 0.0;
       right_plc = 0.0;
     }
-    else if (angular_z > 0.0)
-    {
-      left_plc = 300.0;
-      right_plc = 500.0;
-    }
+    // else if (angular_z > 0.0 )
+    // {
+    //   left_plc = 300.0;
+    //   right_plc = 500.0;
+    // }
 
-    else if (angular_z < 0.0)
-    {
-      left_plc = 500.0;
-      right_plc = 300.0;
-    }
+    // else if (angular_z < 0.0)
+    // {
+    //   left_plc = 500.0;
+    //   right_plc = 300.0;
+    // }
     
 
-    else if(linear_x > 0.0)
+    else
     {
       // Calculate left and right wheel velocities (in m/s)
       double left_wheel_vel = linear_x - (angular_z * wheelbase / 2.0);
@@ -132,18 +132,33 @@ void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
       left_motor_rpm = std::max(-255, std::min(255, left_motor_rpm));
       right_motor_rpm = std::max(-255, std::min(255, right_motor_rpm));
 
+      if(left_motor_rpm < 0.0 && right_motor_rpm > 0.0)
+      {
+        left_plc = 300.0;
+        right_plc = 500.0;
+      }
+
+      if(left_motor_rpm > 0.0 && right_motor_rpm < 0.0)
+      {
+        left_plc = 500.0;
+        right_plc = 300.0;
+      }
+
+      if(left_motor_rpm > 0.0 && right_motor_rpm > 0.0)
+      {
+        left_plc = mapFloat(left_motor_rpm, -255, 255, 220, 880);
+        right_plc = mapFloat(right_motor_rpm, -255, 255, 220, 880);
+      }
+
       // Print the calculated RPM values (replace with your motor control logic)
       RCLCPP_INFO(this->get_logger(), "Left Motor RPM: %d, Right Motor RPM: %d", left_motor_rpm, right_motor_rpm);
-
-      left_plc = mapFloat(left_motor_rpm, -255, 255, 220, 880);
-      right_plc = mapFloat(right_motor_rpm, -255, 255, 220, 880);
-
       RCLCPP_INFO(this->get_logger(), "Left Motor PLC: %f, Right Motor PLC: %f", left_plc, right_plc);
       // left_plc = pwm_to_analog(left_motor_rpm, 255, 880);  // plc mx analog value 880
       // right_plc = pwm_to_analog(right_motor_rpm, 255, 880); // plc mx analog value 880
       // std::cout<<"left_pwm --- > "<<left_pwm<<" right_pwm ----> "<<right_pwm<<std::endl;
 
     }
+    
 
     
     plc_modbus(left_plc, right_plc);
