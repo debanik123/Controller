@@ -62,7 +62,7 @@ float kint_control::mapFloat(float x, float in_min, float in_max, float out_min,
 void kint_control::plc_modbus(double left_plc, double right_plc)
 {
     modbus_t *ctx_plc = NULL;
-    uint16_t motor_write_reg[2] = {};
+    uint16_t motor_write_reg[1] = {};
 
     int rc;
 
@@ -79,11 +79,12 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
 
     else
     {
+      rc = modbus_set_slave(ctx_plc, 1);
       motor_write_reg[0] = left_plc;
       motor_write_reg[1] = right_plc;
 
-      rc = modbus_set_slave(ctx_plc, 1);
-      rc = modbus_write_registers(ctx_plc, 4097, 2, motor_write_reg);
+      
+      rc = modbus_write_registers(ctx_plc, 4096, 2, motor_write_reg);
 
       if (rc == -1)
       {
@@ -99,31 +100,52 @@ void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
     double linear_x = msg->linear.x;
     double angular_z = msg->angular.z;
 
-    // Calculate left and right wheel velocities (in m/s)
-    double left_wheel_vel = linear_x - (angular_z * wheelbase / 2.0);
-    double right_wheel_vel = linear_x + (angular_z * wheelbase / 2.0);
+    if(linear_x == 0.0 && angular_z == 0.0)
+    {
+      left_plc = 0.0;
+      right_plc = 0.0;
+    }
+    else if (angular_z > 0.0)
+    {
+      left_plc = 300.0;
+      right_plc = 700.0;
+    }
 
-    // Convert wheel velocities to RPM (assuming linear relationship)
-    int left_motor_rpm = static_cast<int>(left_wheel_vel / (2 * 3.141592 * wheel_radius) * 60);
-    int right_motor_rpm = static_cast<int>(right_wheel_vel / (2 * 3.141592 * wheel_radius) * 60);
+    else if (angular_z < 0.0)
+    {
+      left_plc = 700.0;
+      right_plc = 300.0;
+    }
+    
 
-    // Ensure RPM values are within the valid range (-255 to 255)
-    left_motor_rpm = std::max(-255, std::min(255, left_motor_rpm));
-    right_motor_rpm = std::max(-255, std::min(255, right_motor_rpm));
+    else
+    {
+      // Calculate left and right wheel velocities (in m/s)
+      double left_wheel_vel = linear_x - (angular_z * wheelbase / 2.0);
+      double right_wheel_vel = linear_x + (angular_z * wheelbase / 2.0);
 
-    // Print the calculated RPM values (replace with your motor control logic)
-    RCLCPP_INFO(this->get_logger(), "Left Motor RPM: %d, Right Motor RPM: %d", left_motor_rpm, right_motor_rpm);
+      // Convert wheel velocities to RPM (assuming linear relationship)
+      int left_motor_rpm = static_cast<int>(left_wheel_vel / (2 * 3.141592 * wheel_radius) * 60);
+      int right_motor_rpm = static_cast<int>(right_wheel_vel / (2 * 3.141592 * wheel_radius) * 60);
 
-    left_plc = mapFloat(left_motor_rpm, -255, 255, 220, 880);
-    right_plc = mapFloat(right_motor_rpm, -255, 255, 220, 880);
+      // Ensure RPM values are within the valid range (-255 to 255)
+      left_motor_rpm = std::max(-255, std::min(255, left_motor_rpm));
+      right_motor_rpm = std::max(-255, std::min(255, right_motor_rpm));
 
-    RCLCPP_INFO(this->get_logger(), "Left Motor PLC: %f, Right Motor PLC: %f", left_plc, right_plc);
-    // left_plc = pwm_to_analog(left_motor_rpm, 255, 880);  // plc mx analog value 880
-    // right_plc = pwm_to_analog(right_motor_rpm, 255, 880); // plc mx analog value 880
+      // Print the calculated RPM values (replace with your motor control logic)
+      RCLCPP_INFO(this->get_logger(), "Left Motor RPM: %d, Right Motor RPM: %d", left_motor_rpm, right_motor_rpm);
 
+      left_plc = mapFloat(left_motor_rpm, -255, 255, 220, 880);
+      right_plc = mapFloat(right_motor_rpm, -255, 255, 220, 880);
 
-    // std::cout<<"left_pwm --- > "<<left_pwm<<" right_pwm ----> "<<right_pwm<<std::endl;
+      RCLCPP_INFO(this->get_logger(), "Left Motor PLC: %f, Right Motor PLC: %f", left_plc, right_plc);
+      // left_plc = pwm_to_analog(left_motor_rpm, 255, 880);  // plc mx analog value 880
+      // right_plc = pwm_to_analog(right_motor_rpm, 255, 880); // plc mx analog value 880
+      // std::cout<<"left_pwm --- > "<<left_pwm<<" right_pwm ----> "<<right_pwm<<std::endl;
 
+    }
+
+    
     plc_modbus(left_plc, right_plc);
 
     std_msgs::msg::Int16MultiArray message;
