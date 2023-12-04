@@ -142,7 +142,7 @@ void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
     
 
     
-    // plc_modbus(left_plc, right_plc);
+    plc_modbus(left_plc, right_plc);
 
     std_msgs::msg::Int16MultiArray message;
     message.data = {left_pwm, right_pwm, left_plc, right_plc};
