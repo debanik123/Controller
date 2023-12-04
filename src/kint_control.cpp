@@ -42,9 +42,16 @@ class kint_control : public rclcpp::Node
     modbus_t *ctx = NULL;
 
     const double min_rpm_threshold = 0.0;
+    double Sqrt(double x, double y);
     
     
 };
+
+double kint_control::Sqrt(double x, double y)
+{
+  double h = hypot(x, y);
+  return h;
+}
 
 double kint_control::pwm_to_analog(double pwm_value, double max_pwm_value, double max_analog_value) 
 {
@@ -118,20 +125,12 @@ void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
       int left_motor_rpm = static_cast<int>(left_wheel_vel / (2 * 3.141592 * wheel_radius) * 60);
       int right_motor_rpm = static_cast<int>(right_wheel_vel / (2 * 3.141592 * wheel_radius) * 60);
 
-      // Check and set minimum threshold
-      if (left_motor_rpm < min_rpm_threshold) 
-      {
-          left_motor_rpm = min_rpm_threshold;
-      }
-
-      if (right_motor_rpm < min_rpm_threshold) 
-      {
-          right_motor_rpm = min_rpm_threshold;
-      }
-
       left_plc = mapFloat(left_motor_rpm, -255, 255, 220, 880);
       right_plc = mapFloat(right_motor_rpm, -255, 255, 220, 880);
-      
+
+      double diff_lr_plc = abs(left_plc - right_plc);
+      RCLCPP_INFO(this->get_logger(), "diff_lr_plc: %f", diff_lr_plc);
+
       RCLCPP_INFO(this->get_logger(), "Left Motor RPM: %d, Right Motor RPM: %d", left_motor_rpm, right_motor_rpm);
       RCLCPP_INFO(this->get_logger(), "Left Motor PLC: %f, Right Motor PLC: %f", left_plc, right_plc);
       // left_plc = pwm_to_analog(left_motor_rpm, 255, 880);  // plc mx analog value 880
