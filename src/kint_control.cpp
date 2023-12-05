@@ -138,12 +138,20 @@ void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
         RCLCPP_INFO(this->get_logger(), "Turn Right");
         right_plc = right_plc;
         left_plc *= 1.2;
+        if(left_plc>850)
+        {
+          left_plc = 850;
+        }
       }
       else if (diff_lr_plc < -diff_lr_plc_threshold) 
       {
         RCLCPP_INFO(this->get_logger(), "Turn Left");
         right_plc *= 1.2;
         left_plc = left_plc;
+        if(right_plc>850)
+        {
+          right_plc = 850;
+        }
       }
       else
       {
