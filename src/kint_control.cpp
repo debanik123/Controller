@@ -44,7 +44,7 @@ class kint_control : public rclcpp::Node
     const double min_rpm_threshold = 0.0;
     double Sqrt(double x, double y);
 
-    const double diff_lr_plc_threshold =10.0;
+    const double diff_lr_plc_threshold =8.0;
     
     
 };
@@ -137,7 +137,7 @@ void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
       {
         RCLCPP_INFO(this->get_logger(), "Turn Right");
         right_plc = right_plc;
-        left_plc *= 1.2;
+        left_plc *= 1.3;
         if(left_plc>850)
         {
           left_plc = 850;
@@ -146,7 +146,7 @@ void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
       else if (diff_lr_plc < -diff_lr_plc_threshold) 
       {
         RCLCPP_INFO(this->get_logger(), "Turn Left");
-        right_plc *= 1.2;
+        right_plc *= 1.3;
         left_plc = left_plc;
         if(right_plc>850)
         {
