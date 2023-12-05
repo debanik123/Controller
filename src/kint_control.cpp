@@ -43,6 +43,8 @@ class kint_control : public rclcpp::Node
 
     const double min_rpm_threshold = 0.0;
     double Sqrt(double x, double y);
+
+    const double diff_lr_plc_threshold = 5.0;
     
     
 };
@@ -128,8 +130,28 @@ void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
       left_plc = mapFloat(left_motor_rpm, -255, 255, 220, 880);
       right_plc = mapFloat(right_motor_rpm, -255, 255, 220, 880);
 
-      double diff_lr_plc = abs(left_plc - right_plc);
+      double diff_lr_plc = left_plc - right_plc;
       RCLCPP_INFO(this->get_logger(), "diff_lr_plc: %f", diff_lr_plc);
+
+      if (diff_lr_plc > diff_lr_plc_threshold) 
+      {
+        RCLCPP_INFO(this->get_logger(), "Turn Right");
+        right_plc = right_plc;
+        left_plc *= 1.2;
+      }
+      else if (diff_lr_plc < -diff_lr_plc_threshold) 
+      {
+        RCLCPP_INFO(this->get_logger(), "Turn Left");
+        right_plc *= 1.2;
+        left_plc = left_plc;
+      }
+      else
+      {
+        RCLCPP_INFO(this->get_logger(), "Moving straight");
+        right_plc = right_plc;
+        left_plc = left_plc;
+      }
+
 
       RCLCPP_INFO(this->get_logger(), "Left Motor RPM: %d, Right Motor RPM: %d", left_motor_rpm, right_motor_rpm);
       RCLCPP_INFO(this->get_logger(), "Left Motor PLC: %f, Right Motor PLC: %f", left_plc, right_plc);
