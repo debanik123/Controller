@@ -44,7 +44,7 @@ class kint_control : public rclcpp::Node
     const double min_rpm_threshold = 0.0;
     double Sqrt(double x, double y);
 
-    const double diff_lr_plc_threshold = 5.0;
+    const double diff_lr_plc_threshold =10.0;
     
     
 };
