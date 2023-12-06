@@ -137,7 +137,7 @@ void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
       {
         RCLCPP_INFO(this->get_logger(), "Turn Right");
         right_plc = right_plc;
-        left_plc *= 1.3;
+        left_plc *= 1.35;
         if(left_plc>875)
         {
           left_plc = 875;
