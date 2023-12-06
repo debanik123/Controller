@@ -91,8 +91,8 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
     else
     {
       rc = modbus_set_slave(ctx_plc, 1);
-      motor_write_reg[0] = left_plc;
-      motor_write_reg[1] = right_plc;
+      motor_write_reg[0] = right_plc;
+      motor_write_reg[1] = left_plc;
 
       
       rc = modbus_write_registers(ctx_plc, 4096, 2, motor_write_reg);
@@ -138,26 +138,35 @@ void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
         RCLCPP_INFO(this->get_logger(), "Turn Right");
         right_plc = right_plc;
         left_plc *= 1.3;
-        if(left_plc>850)
+        if(left_plc>875)
         {
-          left_plc = 850;
+          left_plc = 875;
         }
       }
       else if (diff_lr_plc < -diff_lr_plc_threshold) 
       {
         RCLCPP_INFO(this->get_logger(), "Turn Left");
-        right_plc *= 1.3;
+        right_plc *= 1.35;
         left_plc = left_plc;
-        if(right_plc>850)
+        if(right_plc>875)
         {
-          right_plc = 850;
+          right_plc = 875;
         }
       }
       else
       {
         RCLCPP_INFO(this->get_logger(), "Moving straight");
-        right_plc = right_plc;
-        left_plc = left_plc;
+        right_plc = right_plc*1.5;
+        left_plc = left_plc*1.5;
+        if(left_plc>875)
+        {
+          left_plc = 875;
+        }
+        if(right_plc>875)
+        {
+          right_plc = 875;
+        }
+
       }
 
 
