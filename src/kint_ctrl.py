@@ -23,6 +23,7 @@ class KintControl(Node):
         self.left_plc = 0.0
         self.right_plc = 0.0
 
+
         # Modbus connection parameters
         self.modbus_port = '/dev/ttyUSB0'
         self.modbus_baudrate = 115200
@@ -38,6 +39,8 @@ class KintControl(Node):
             bytesize=self.modbus_bytesize,
             parity=self.modbus_parity
         )
+
+        
         self.diff_lr_plc_threshold = 7.0
 
     def destroy(self):
@@ -48,6 +51,7 @@ class KintControl(Node):
         linear_x = msg.linear.x
         angular_z = msg.angular.z
 
+        print("fuckkkkkkkkkkkkkkkkkkkkkkkkkkkk")
         if linear_x == 0.0 and angular_z == 0.0:
             self.left_plc = 0.0
             self.right_plc = 0.0
@@ -81,10 +85,9 @@ class KintControl(Node):
                 if self.right_plc > 875:
                     self.right_plc = 875
 
-            self.get_logger().info('Left Motor RPM: %d, Right Motor RPM: %d',
-                                   left_motor_rpm, right_motor_rpm)
-            self.get_logger().info('Left Motor PLC: %f, Right Motor PLC: %f',
-                                   self.left_plc, self.right_plc)
+            self.get_logger().info(f'Left Motor RPM: {left_motor_rpm}, Right Motor RPM: {right_motor_rpm}')
+            self.get_logger().info(f'Left Motor PLC: {self.left_plc}, Right Motor PLC: {self.right_plc}')
+
 
         self.plc_modbus(self.left_plc, self.right_plc)
 
