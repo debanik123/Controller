@@ -100,8 +100,6 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
       if (rc == -1)
       {
           RCLCPP_ERROR(this->get_logger(), "Failed to write data Plc for motor %s", modbus_strerror(errno));
-          modbus_close(ctx_plc);
-          modbus_free(ctx_plc);
       }
       modbus_close(ctx_plc);
       modbus_free(ctx_plc);
