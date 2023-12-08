@@ -160,18 +160,18 @@ void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
       right_motor_rpm = static_cast<int>(right_wheel_vel / (2 * 3.141592 * wheel_radius) * 60);
 
       // Check and set minimum threshold
-      if (left_motor_rpm < min_rpm_threshold) 
-      {
-          left_motor_rpm = min_rpm_threshold;
-      }
+      // if (left_motor_rpm < min_rpm_threshold) 
+      // {
+      //     left_motor_rpm = min_rpm_threshold;
+      // }
 
-      if (right_motor_rpm < min_rpm_threshold) 
-      {
-          right_motor_rpm = min_rpm_threshold;
-      }
+      // if (right_motor_rpm < min_rpm_threshold) 
+      // {
+      //     right_motor_rpm = min_rpm_threshold;
+      // }
 
-      left_plc = mapFloat(left_motor_rpm, -255, 255, 220, 880);
-      right_plc = mapFloat(right_motor_rpm, -255, 255, 220, 880);
+      left_plc = mapFloat(left_motor_rpm, -255, 255, 220, 870);
+      right_plc = mapFloat(right_motor_rpm, -255, 255, 220, 870);
       
       RCLCPP_INFO(this->get_logger(), "Left Motor RPM: %d, Right Motor RPM: %d", left_motor_rpm, right_motor_rpm);
       RCLCPP_INFO(this->get_logger(), "Left Motor PLC: %f, Right Motor PLC: %f", left_plc, right_plc);
