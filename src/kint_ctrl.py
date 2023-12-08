@@ -1,11 +1,9 @@
-# pip3 install pymodbus==2.2.0rc1
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import Twist
 from std_msgs.msg import Int16MultiArray
+from geometry_msgs.msg import Twist
 from pymodbus.client.sync import ModbusSerialClient
 import math
-
 
 class KintControl(Node):
 
@@ -20,104 +18,108 @@ class KintControl(Node):
         self.wheelbase = 0.9  # Replace with your robot's wheelbase in meters
         self.wheel_radius = 0.207  # Replace with your robot's wheel radius in meters
 
-        self.left_pwm = 0
-        self.right_pwm = 0
-        self.left_plc = 0
-        self.right_plc = 0
+        self.left_pwm = 0.0
+        self.right_pwm = 0.0
+        self.left_plc = 0.0
+        self.right_plc = 0.0
 
-        self.ctx_plc = ModbusSerialClient(method='ascii', timeout=0.2, port='/dev/ttyUSB0')
-        if self.ctx_plc.connect():
-            print("PLC Connection OKKKKk")
-        if not self.ctx_plc.connect():
-            # self.get_logger().error("PLC Connection failed")
-            print("PLC Connection failed")
-            self.ctx_plc.close()
-            return
+        # Modbus connection parameters
+        self.modbus_port = '/dev/ttyUSB0'
+        self.modbus_baudrate = 115200
+        self.modbus_stopbits = 1
+        self.modbus_bytesize = 8
+        self.modbus_parity = 'N'
+        self.modbus_slave_address = 1
+        self.modbus_client = ModbusSerialClient(
+            method='rtu',
+            port=self.modbus_port,
+            baudrate=self.modbus_baudrate,
+            stopbits=self.modbus_stopbits,
+            bytesize=self.modbus_bytesize,
+            parity=self.modbus_parity
+        )
+        self.diff_lr_plc_threshold = 7.0
 
-    def pwm_to_analog(self, pwm_value, max_pwm_value, max_analog_value):
-        if pwm_value <= 61.0:
-            pwm_value = 61.0
-        return (pwm_value / max_pwm_value) * max_analog_value
-
-    def map_float(self, x, in_min, in_max, out_min, out_max):
-        return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
-    
-    def int_to_ascii(self,value):
-        """Convert an integer to ASCII."""
-        try:
-            ascii_value = chr(value)
-            return ascii_value
-        except ValueError:
-            print("Error: Cannot convert integer to ASCII.")
-            return None
-
-    def plc_modbus(self, left_plc, right_plc):
-
-        try:
-            # left_ascii = chr(int(left_plc))
-            # right_ascii = chr(int(right_plc))
-
-            # motor_write_reg = [ord(left_ascii), ord(right_ascii)]
-            self.ctx_plc.write_registers(4096, motor_write_reg[0])
-            print(motor_write_reg[0])
-        except Exception as e:
-            print("Failed to write data to PLC for motor")
-        finally:
-            self.ctx_plc.close()
-
-    def rpm_to_voltage(self, rpm, max_rpm, min_voltage, max_voltage):
-        normalized_rpm = min(max(0, rpm), max_rpm)  # Ensure RPM is within valid range
-        normalized_voltage = ((normalized_rpm / max_rpm) * (max_voltage - min_voltage)) + min_voltage
-        return normalized_voltage
-
+    def destroy(self):
+        self.modbus_client.close()
+        super().destroy_node()
 
     def cmd_vel_callback(self, msg):
         linear_x = msg.linear.x
         angular_z = msg.angular.z
 
-        # Calculate left and right wheel velocities (in m/s)
-        left_wheel_vel = linear_x - (angular_z * self.wheelbase / 2.0)
-        right_wheel_vel = linear_x + (angular_z * self.wheelbase / 2.0)
+        if linear_x == 0.0 and angular_z == 0.0:
+            self.left_plc = 0.0
+            self.right_plc = 0.0
+        else:
+            left_wheel_vel = linear_x - (angular_z * self.wheelbase / 2.0)
+            right_wheel_vel = linear_x + (angular_z * self.wheelbase / 2.0)
 
-        # Convert wheel velocities to RPM (assuming linear relationship)
-        left_motor_rpm = int(left_wheel_vel / (2 * math.pi * self.wheel_radius) * 60)
-        right_motor_rpm = int(right_wheel_vel / (2 * math.pi * self.wheel_radius) * 60)
+            left_motor_rpm = int(left_wheel_vel / (2 * math.pi * self.wheel_radius) * 60)
+            right_motor_rpm = int(right_wheel_vel / (2 * math.pi * self.wheel_radius) * 60)
 
-        max_rpm = 255
-        # Set the voltage range (1 to 5 volts)
-        min_voltage = 1
-        max_voltage = 5
+            self.left_plc = self.map_float(left_motor_rpm, -255, 255, 220, 880)
+            self.right_plc = self.map_float(right_motor_rpm, -255, 255, 220, 880)
 
-        left_motor_voltage = self.rpm_to_voltage(left_motor_rpm, max_rpm, min_voltage, max_voltage)
-        right_motor_voltage = self.rpm_to_voltage(right_motor_rpm, max_rpm, min_voltage, max_voltage)
+            diff_lr_plc = self.left_plc - self.right_plc
 
-        print("left_wheel_vel ---> ", left_wheel_vel, "right_wheel_vel ---> ", right_wheel_vel)
-        print("left_motor_rpm ---> ", left_motor_rpm, "right_motor_rpm ---> ", right_motor_rpm)
-        print("left_motor_voltage ---> ", left_motor_voltage, "right_motor_voltage ---> ", right_motor_voltage)
+            if diff_lr_plc > self.diff_lr_plc_threshold:
+                self.right_plc = self.right_plc
+                self.left_plc *= 1.35
+                if self.left_plc > 875:
+                    self.left_plc = 875
+            elif diff_lr_plc < -self.diff_lr_plc_threshold:
+                self.right_plc *= 1.35
+                self.left_plc = self.left_plc
+                if self.right_plc > 875:
+                    self.right_plc = 875
+            else:
+                self.right_plc = self.right_plc * 1.5
+                self.left_plc = self.left_plc * 1.5
+                if self.left_plc > 875:
+                    self.left_plc = 875
+                if self.right_plc > 875:
+                    self.right_plc = 875
 
-        # Ensure RPM values are within the valid range (-255 to 255)
-        left_motor_rpm = max(-255, min(255, left_motor_rpm))
-        right_motor_rpm = max(-255, min(255, right_motor_rpm))
+            self.get_logger().info('Left Motor RPM: %d, Right Motor RPM: %d',
+                                   left_motor_rpm, right_motor_rpm)
+            self.get_logger().info('Left Motor PLC: %f, Right Motor PLC: %f',
+                                   self.left_plc, self.right_plc)
 
-        # Print the calculated RPM values (replace with your motor control logic)
-        # self.get_logger().info("Left Motor RPM: %d, Right Motor RPM: %d", left_motor_rpm, right_motor_rpm)
+        self.plc_modbus(self.left_plc, self.right_plc)
 
-        self.left_plc = self.map_float(left_motor_rpm, -255, 255, 220, 880)
-        self.right_plc = self.map_float(right_motor_rpm, -255, 255, 220, 880)
+        message = Int16MultiArray()
+        message.data = [self.left_pwm, self.right_pwm, self.left_plc, self.right_plc]
+        self.plc_publisher.publish(message)
 
-        # self.get_logger().info("Left Motor PLC: %f, Right Motor PLC: %f", self.left_plc, self.right_plc)
+    def plc_modbus(self, left_plc, right_plc):
+        if not self.modbus_client.connect():
+            self.get_logger().error('PLC Connection failed')
+            return
 
-        # self.plc_modbus(self.left_plc, self.right_plc)
+        try:
+            self.modbus_client.set_slave(self.modbus_slave_address)
+            motor_write_reg = [int(right_plc), int(left_plc)]
+            self.modbus_client.write_registers(4096, motor_write_reg)
+        except Exception as e:
+            self.get_logger().error('Failed to write data to PLC: %s', str(e))
+        finally:
+            self.modbus_client.close()
 
-        # message = Int16MultiArray(data=[self.left_pwm, self.right_pwm, self.left_plc, self.right_plc])
-        # self.plc_publisher.publish(message)
+    @staticmethod
+    def map_float(x, in_min, in_max, out_min, out_max):
+        return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
 
 def main(args=None):
     rclpy.init(args=args)
-    kint_control_node = KintControl()
-    rclpy.spin(kint_control_node)
-    kint_control_node.destroy_node()
+    kint_control = KintControl()
+    try:
+        rclpy.spin(kint_control)
+    except KeyboardInterrupt:
+        pass
+
+    kint_control.destroy()
     rclpy.shutdown()
 
 
