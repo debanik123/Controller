@@ -16,9 +16,28 @@ class kint_control : public rclcpp::Node
     {
         CmdVelSub = this->create_subscription<geometry_msgs::msg::Twist>("cmd_vel", 10, std::bind(&kint_control::CmdVelCb, this, _1));
         PLCPublisher = this->create_publisher<std_msgs::msg::Int16MultiArray>("plc_data", 10);
+
+        ctx_plc = modbus_new_rtu("/dev/ttyUSB0", 115200, 'N', 8, 1);
+        int status1 = modbus_connect(ctx_plc);
+
+        if (status1 == -1)
+        {
+            RCLCPP_ERROR(this->get_logger(), "PLC Connection failed");
+            modbus_close(ctx_plc);
+            modbus_free(ctx_plc);
+            return;
+        }
     }
-  public:
-    ~kint_control();
+  ~kint_control()
+  {
+    if (ctx_plc != NULL)
+    {
+        modbus_close(ctx_plc);
+        modbus_free(ctx_plc);
+    }
+
+  }
+
   public:
     void CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg);
     double pwm_to_analog(double pwm_value, double max_pwm_value, double max_analog_value);
@@ -45,9 +64,15 @@ class kint_control : public rclcpp::Node
     double Sqrt(double x, double y);
 
     const double diff_lr_plc_threshold =8.0;
+
+    modbus_t *ctx_plc = NULL;
+    uint16_t motor_write_reg[1] = {};
+
+    int rc;
     
     
 };
+
 
 double kint_control::Sqrt(double x, double y)
 {
@@ -72,38 +97,19 @@ float kint_control::mapFloat(float x, float in_min, float in_max, float out_min,
 
 void kint_control::plc_modbus(double left_plc, double right_plc)
 {
-    modbus_t *ctx_plc = NULL;
-    uint16_t motor_write_reg[1] = {};
+    rc = modbus_set_slave(ctx_plc, 1);
+    motor_write_reg[0] = right_plc;
+    motor_write_reg[1] = left_plc;
+    
+    rc = modbus_write_registers(ctx_plc, 4096, 2, motor_write_reg);
 
-    int rc;
-
-    ctx_plc = modbus_new_rtu("/dev/ttyUSB0", 115200, 'N', 8, 1);
-    int status1 = modbus_connect(ctx_plc);
-
-    if (status1 == -1)
+    if (rc == -1)
     {
-        RCLCPP_ERROR(this->get_logger(), "PLC Connection failed");
-        modbus_close(ctx_plc);
-        modbus_free(ctx_plc);
-        return;
+        RCLCPP_ERROR(this->get_logger(), "Failed to write data Plc for motor %s", modbus_strerror(errno));
     }
-
-    else
-    {
-      rc = modbus_set_slave(ctx_plc, 1);
-      motor_write_reg[0] = right_plc;
-      motor_write_reg[1] = left_plc;
-
-      
-      rc = modbus_write_registers(ctx_plc, 4096, 2, motor_write_reg);
-
-      if (rc == -1)
-      {
-          RCLCPP_ERROR(this->get_logger(), "Failed to write data Plc for motor %s", modbus_strerror(errno));
-      }
-      modbus_close(ctx_plc);
-      modbus_free(ctx_plc);
-    }
+    modbus_close(ctx_plc);
+    modbus_free(ctx_plc);
+    
 }
 
 void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
@@ -198,12 +204,14 @@ double kint_control::wrapping(float v)
   return v;
 }
 
-kint_control::~kint_control()
-{
-
-    modbus_close(ctx);
-    modbus_free(ctx);
-}
+// kint_control::~kint_control()
+// {
+//   if (ctx_plc != NULL)
+//   {
+//       modbus_close(ctx_plc);
+//       modbus_free(ctx_plc);
+//   }
+// }
 
 int main(int argc, char * argv[])
 {
