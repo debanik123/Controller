@@ -22,7 +22,7 @@ class kint_control : public rclcpp::Node
   public:
     void CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg);
     double pwm_to_analog(double pwm_value, double max_pwm_value, double max_analog_value);
-    void plc_modbus(double left_plc, double right_plc, int left_motor_rpm, int right_motor_rpm);
+    void plc_modbus(double left_plc, double right_plc);
     double wrapping(float v);
     float mapFloat(float x, float in_min, float in_max, float out_min, float out_max);
 
@@ -39,7 +39,6 @@ class kint_control : public rclcpp::Node
     double wheel_radius = 0.207;  // Replace with your robot's wheel radius in meters
 
     double left_pwm, right_pwm, left_plc, right_plc, dx, dy, dr;
-    int left_motor_rpm, right_motor_rpm;
     modbus_t *ctx = NULL;
 
     const double min_rpm_threshold = 0.0;
@@ -64,10 +63,9 @@ float kint_control::mapFloat(float x, float in_min, float in_max, float out_min,
 
 void kint_control::plc_modbus(double left_plc, double right_plc, int left_motor_rpm, int right_motor_rpm)
 {
-    
     modbus_t *ctx_plc = NULL;
-    uint16_t motor_write_reg[1] = {};
-    uint16_t motor_write_switch[4] = {};
+    uint16_t motor_write_reg[3] = {};
+
     int rc;
 
     ctx_plc = modbus_new_rtu("/dev/ttyUSB0", 115200, 'N', 8, 1);
@@ -83,61 +81,18 @@ void kint_control::plc_modbus(double left_plc, double right_plc, int left_motor_
 
     else
     {
-      
       rc = modbus_set_slave(ctx_plc, 1);
-      motor_write_reg[0] = left_plc;
-      motor_write_reg[1] = right_plc;
-      RCLCPP_INFO(this->get_logger(), "HIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIi");
+      motor_write_reg[0] = right_plc;
+      motor_write_reg[1] = left_plc;
+      motor_write_reg[2] = right_wheel;
+      motor_write_reg[3] = left_wheel;
+
       
-      if (left_motor_rpm > 0 && right_motor_rpm > 0)  //forward
+      if (left_motor_rpm > 0 && right_motor_rpm > 0)
       {
-          motor_write_switch[0] = 1;
-          motor_write_switch[1] = 0;
-          motor_write_switch[2] = 1;
-          motor_write_switch[3] = 0; 
           rc = modbus_write_registers(ctx_plc, 4096, 2, motor_write_reg);
-          rc = modbus_write_bit(ctx_plc, 2048, 1);
-          rc = modbus_write_bit(ctx_plc, 2049, 0);
-          rc = modbus_write_bit(ctx_plc, 2050, 1);
-          rc = modbus_write_bit(ctx_plc, 2041, 0);
-      }
-      else if (left_motor_rpm < 0 && right_motor_rpm < 0)  //backward
-      {  
-          motor_write_switch[0] = 0;
-          motor_write_switch[1] = 1;
-          motor_write_switch[2] = 0;
-          motor_write_switch[3] = 1;
-          rc = modbus_write_registers(ctx_plc, 4096, 2, motor_write_reg);
-          rc = modbus_write_bit(ctx_plc, 2048, 0);
-          rc = modbus_write_bit(ctx_plc, 2049, 1);
-          rc = modbus_write_bit(ctx_plc, 2050, 0);
-          rc = modbus_write_bit(ctx_plc, 2041, 1);
-          
-      }
-      else if (left_motor_rpm <= 0 && right_motor_rpm > 0) //left_turn
-      {
-          motor_write_switch[0] = 1;
-          motor_write_switch[1] = 0;
-          motor_write_switch[2] = 0;
-          motor_write_switch[3] = 1;
-          rc = modbus_write_registers(ctx_plc, 4096, 2, motor_write_reg);
-          rc = modbus_write_bit(ctx_plc, 2048, 1);
-          rc = modbus_write_bit(ctx_plc, 2049, 0);
-          rc = modbus_write_bit(ctx_plc, 2050, 0);
-          rc = modbus_write_bit(ctx_plc, 2041, 1);
-      }
-      else if (left_motor_rpm > 0 && right_motor_rpm <= 0) //right_turn
-      {
-          motor_write_switch[0] = 0;
-          motor_write_switch[1] = 1;
-          motor_write_switch[2] = 1;
-          motor_write_switch[3] = 0;
-          rc = modbus_write_registers(ctx_plc, 4096, 2, motor_write_reg);
-          rc = modbus_write_bit(ctx_plc, 2048, 0);
-          rc = modbus_write_bit(ctx_plc, 2049, 1);
-          rc = modbus_write_bit(ctx_plc, 2050, 1);
-          rc = modbus_write_bit(ctx_plc, 2041, 0);
-      }
+      
+      
 
       if (rc == -1)
       {
@@ -157,8 +112,6 @@ void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
     {
       left_plc = 0.0;
       right_plc = 0.0;
-      left_motor_rpm = 0.0;
-      right_motor_rpm = 0.0;
     }
 
     else
@@ -192,8 +145,6 @@ void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
       // std::cout<<"left_pwm --- > "<<left_pwm<<" right_pwm ----> "<<right_pwm<<std::endl;
 
     }
-    
-
     
     plc_modbus(left_plc, right_plc, left_motor_rpm, right_motor_rpm);
 
