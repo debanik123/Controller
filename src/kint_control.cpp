@@ -41,6 +41,7 @@ class kint_control : public rclcpp::Node
     double left_pwm, right_pwm, left_plc, right_plc, dx, dy, dr;
     int left_motor_rpm, right_motor_rpm;
     modbus_t *ctx = NULL;
+    double linear_x, angular_z;
 
     const double min_rpm_threshold = 0.0;
     
@@ -92,28 +93,28 @@ void kint_control::plc_modbus(double left_plc, double right_plc, int left_motor_
       // rc = modbus_write_registers(ctx_plc, 4096, 2, motor_write_reg);
       // std::cout<<"left_motor_rpm "<<left_motor_rpm<<"right_motor_rpm "<<right_motor_rpm<<std::endl;
       
-      if (linear.x > 0 && angular.z < 0.05)  // forward
+      if (linear_x > 0 && angular_z == 0)  // forward
         {
             rc = modbus_write_bit(ctx_plc, 2048, 1);
             rc = modbus_write_bit(ctx_plc, 2049, 0);
             rc = modbus_write_bit(ctx_plc, 2050, 1);
             rc = modbus_write_bit(ctx_plc, 2051, 0);
         }
-      else if (linear.x < 0 && angular.z == 0)  // backward
+      else if (linear_< 0 && angular_z == 0)  // backward
         {
             rc = modbus_write_bit(ctx_plc, 2048, 0);
             rc = modbus_write_bit(ctx_plc, 2049, 1);
             rc = modbus_write_bit(ctx_plc, 2050, 0);
             rc = modbus_write_bit(ctx_plc, 2051, 1);
         }
-      else if (linear.x <= 0.6 && angular.z > 0) // left turn
+      else if (linearx_ == 0 && angular_z > 0) // left turn
         {
             rc = modbus_write_bit(ctx_plc, 2048, 1);
             rc = modbus_write_bit(ctx_plc, 2049, 0);
             rc = modbus_write_bit(ctx_plc, 2050, 0);
             rc = modbus_write_bit(ctx_plc, 2051, 1);
         }
-      else if (linear.x <= 0.6 && angular.z < 0) // right turn
+      else if (linear_x == 0 && angular_z < 0) // right turn
         {
             rc = modbus_write_bit(ctx_plc, 2048, 0);
             rc = modbus_write_bit(ctx_plc, 2049, 1);
@@ -132,8 +133,8 @@ void kint_control::plc_modbus(double left_plc, double right_plc, int left_motor_
 
 void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
 {
-    double linear_x = msg->linear.x;
-    double angular_z = msg->angular.z;
+    linear_x = msg->linear.x;
+    angular_z = msg->angular.z;
 
     if(linear_x == 0.0 && angular_z == 0.0)
     {
