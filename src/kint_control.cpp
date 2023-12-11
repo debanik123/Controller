@@ -95,19 +95,19 @@ void kint_control::plc_modbus(double left_plc, double right_plc, int left_motor_
       
       if (linear_x > 0 && angular_z == 0)  // forward
         {
-            rc = modbus_write_bit(ctx_plc, 2048, 1);
-            rc = modbus_write_bit(ctx_plc, 2049, 0);
-            rc = modbus_write_bit(ctx_plc, 2050, 1);
-            rc = modbus_write_bit(ctx_plc, 2051, 0);
-        }
-      else if (linear_< 0 && angular_z == 0)  // backward
-        {
             rc = modbus_write_bit(ctx_plc, 2048, 0);
             rc = modbus_write_bit(ctx_plc, 2049, 1);
             rc = modbus_write_bit(ctx_plc, 2050, 0);
             rc = modbus_write_bit(ctx_plc, 2051, 1);
         }
-      else if (linearx_ == 0 && angular_z > 0) // left turn
+      else if (linear_x < 0 && angular_z == 0)  // backward
+        {
+            rc = modbus_write_bit(ctx_plc, 2048, 1);
+            rc = modbus_write_bit(ctx_plc, 2049, 0);
+            rc = modbus_write_bit(ctx_plc, 2050, 1);
+            rc = modbus_write_bit(ctx_plc, 2051, 0);
+        }
+      else if (linear_x == 0 && angular_z > 0) // left turn
         {
             rc = modbus_write_bit(ctx_plc, 2048, 1);
             rc = modbus_write_bit(ctx_plc, 2049, 0);
