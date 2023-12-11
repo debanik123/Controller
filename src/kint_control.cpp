@@ -22,7 +22,7 @@ class kint_control : public rclcpp::Node
   public:
     void CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg);
     double pwm_to_analog(double pwm_value, double max_pwm_value, double max_analog_value);
-    void plc_modbus(double left_plc, double right_plc, int left_motor_rpm, int right_motor_rpm);
+    void plc_modbus(double left_plc, double right_plc, int left_motor_rpm, int right_motor_rpm, double linear_x, double angular_z);
     double wrapping(float v);
     float mapFloat(float x, float in_min, float in_max, float out_min, float out_max);
 
@@ -62,7 +62,7 @@ float kint_control::mapFloat(float x, float in_min, float in_max, float out_min,
 }
 
 
-void kint_control::plc_modbus(double left_plc, double right_plc, int left_motor_rpm, int right_motor_rpm)
+void kint_control::plc_modbus(double left_plc, double right_plc, int left_motor_rpm, int right_motor_rpm, double linear_x, double angular_z)
 {
     
     modbus_t *ctx_plc = NULL;
@@ -92,35 +92,42 @@ void kint_control::plc_modbus(double left_plc, double right_plc, int left_motor_
       // rc = modbus_write_registers(ctx_plc, 4096, 2, motor_write_reg);
       // std::cout<<"left_motor_rpm "<<left_motor_rpm<<"right_motor_rpm "<<right_motor_rpm<<std::endl;
       
-      if (left_motor_rpm > 0 && right_motor_rpm > 0)  //forward
+      if (linear_x > 0.0 && angular_z == 0.0)  //forward
       {
-          // RCLCPP_INFO(this->get_logger(), "Forward");
-          
-          rc = modbus_write_bit(ctx_plc, 2048, 1);
-          rc = modbus_write_bit(ctx_plc, 2049, 0);
-          rc = modbus_write_bit(ctx_plc, 2050, 1);
-          rc = modbus_write_bit(ctx_plc, 2051, 0);
-      }
-      else if (left_motor_rpm < 0 && right_motor_rpm < 0)  //backward
-      {  
-          // rc = modbus_write_registers(ctx_plc, 4096, 2, motor_write_reg);
+          RCLCPP_INFO(this->get_logger(), "Forward motion");
           rc = modbus_write_bit(ctx_plc, 2048, 0);
           rc = modbus_write_bit(ctx_plc, 2049, 1);
           rc = modbus_write_bit(ctx_plc, 2050, 0);
           rc = modbus_write_bit(ctx_plc, 2051, 1);
+      }
+      
+      else if (linear_x < 0.0 && angular_z == 0.0)  //backward
+      {  
+          // rc = modbus_write_registers(ctx_plc, 4096, 2, motor_write_reg);
+          RCLCPP_INFO(this->get_logger(), "Backward motion");
+          rc = modbus_write_bit(ctx_plc, 2048, 1);
+          rc = modbus_write_bit(ctx_plc, 2049, 0);
+          rc = modbus_write_bit(ctx_plc, 2050, 1);
+          rc = modbus_write_bit(ctx_plc, 2051, 0);
           
       }
-      else if (left_motor_rpm <= 0 && right_motor_rpm > 0) //left_turn
+
+      else if ((linear_x > 0.0 && angular_z > 0.0) || (linear_x == 0.0 && angular_z > 0.0)) //left_turn
       {
           // rc = modbus_write_registers(ctx_plc, 4096, 2, motor_write_reg);
+          RCLCPP_INFO(this->get_logger(), "Left rotation (turn in place)");
+          RCLCPP_INFO(this->get_logger(), "Forward-left motion");
           rc = modbus_write_bit(ctx_plc, 2048, 1);
           rc = modbus_write_bit(ctx_plc, 2049, 0);
           rc = modbus_write_bit(ctx_plc, 2050, 0);
           rc = modbus_write_bit(ctx_plc, 2051, 1);
       }
-      else if (left_motor_rpm > 0 && right_motor_rpm <= 0) //right_turn
+
+      else if ((linear_x > 0.0 && angular_z < 0.0) || (linear_x == 0.0 && angular_z < 0.0)) //right_turn
       {
           // rc = modbus_write_registers(ctx_plc, 4096, 2, motor_write_reg);
+          RCLCPP_INFO(this->get_logger(), "Right rotation (turn in place)");\
+          RCLCPP_INFO(this->get_logger(), "Forward-right motion");
           rc = modbus_write_bit(ctx_plc, 2048, 0);
           rc = modbus_write_bit(ctx_plc, 2049, 1);
           rc = modbus_write_bit(ctx_plc, 2050, 1);
@@ -183,7 +190,7 @@ void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
     
 
     
-    plc_modbus(left_plc, right_plc, left_motor_rpm, right_motor_rpm);
+    plc_modbus(left_plc, right_plc, left_motor_rpm, right_motor_rpm, linear_x, angular_z);
 
     std_msgs::msg::Int16MultiArray message;
     message.data = {left_pwm, right_pwm, left_plc, right_plc};
