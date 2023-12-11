@@ -89,10 +89,13 @@ void kint_control::plc_modbus(double left_plc, double right_plc, int left_motor_
       motor_write_reg[1] = right_plc;
 
       rc = modbus_write_registers(ctx_plc, 4096, 2, motor_write_reg);
+
+      bool isAngularZero = std::abs(angular_z) < 0.09;
+      // RCLCPP_INFO(this->get_logger(), "isAngularZero: %d", isAngularZero);
       // rc = modbus_write_registers(ctx_plc, 4096, 2, motor_write_reg);
       // std::cout<<"left_motor_rpm "<<left_motor_rpm<<"right_motor_rpm "<<right_motor_rpm<<std::endl;
       
-      if (linear_x > 0.0 && angular_z == 0.0)  //forward
+      if (linear_x > 0.0 && isAngularZero)  //forward
       {
           RCLCPP_INFO(this->get_logger(), "Forward motion");
           rc = modbus_write_bit(ctx_plc, 2048, 0);
@@ -101,7 +104,7 @@ void kint_control::plc_modbus(double left_plc, double right_plc, int left_motor_
           rc = modbus_write_bit(ctx_plc, 2051, 1);
       }
       
-      else if (linear_x < 0.0 && angular_z == 0.0)  //backward
+      else if (linear_x < 0.0 && isAngularZero)  //backward
       {  
           // rc = modbus_write_registers(ctx_plc, 4096, 2, motor_write_reg);
           RCLCPP_INFO(this->get_logger(), "Backward motion");
@@ -112,7 +115,7 @@ void kint_control::plc_modbus(double left_plc, double right_plc, int left_motor_
           
       }
 
-      else if ((linear_x > 0.0 && angular_z > 0.0) || (linear_x == 0.0 && angular_z > 0.0)) //left_turn
+      else if (linear_x > 0.1 && angular_z > 0.1 && !isAngularZero) //left_turn
       {
           // rc = modbus_write_registers(ctx_plc, 4096, 2, motor_write_reg);
           RCLCPP_INFO(this->get_logger(), "Left rotation (turn in place)");
@@ -123,7 +126,7 @@ void kint_control::plc_modbus(double left_plc, double right_plc, int left_motor_
           rc = modbus_write_bit(ctx_plc, 2051, 1);
       }
 
-      else if ((linear_x > 0.0 && angular_z < 0.0) || (linear_x == 0.0 && angular_z < 0.0)) //right_turn
+      else if (linear_x > 0.1 && angular_z < -0.1 && !isAngularZero) //right_turn
       {
           // rc = modbus_write_registers(ctx_plc, 4096, 2, motor_write_reg);
           RCLCPP_INFO(this->get_logger(), "Right rotation (turn in place)");\
@@ -166,22 +169,13 @@ void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
       left_motor_rpm = static_cast<int>(left_wheel_vel / (2 * 3.141592 * wheel_radius) * 60);
       right_motor_rpm = static_cast<int>(right_wheel_vel / (2 * 3.141592 * wheel_radius) * 60);
 
-      // Check and set minimum threshold
-      // if (left_motor_rpm < min_rpm_threshold) 
-      // {
-      //     left_motor_rpm = min_rpm_threshold;
-      // }
-
-      // if (right_motor_rpm < min_rpm_threshold) 
-      // {
-      //     right_motor_rpm = min_rpm_threshold;
-      // }
-
       left_plc = mapFloat(left_motor_rpm, -255, 255, 220, 870);
       right_plc = mapFloat(right_motor_rpm, -255, 255, 220, 870);
       
       RCLCPP_INFO(this->get_logger(), "Left Motor RPM: %d, Right Motor RPM: %d", left_motor_rpm, right_motor_rpm);
       RCLCPP_INFO(this->get_logger(), "Left Motor PLC: %f, Right Motor PLC: %f", left_plc, right_plc);
+
+      
       // left_plc = pwm_to_analog(left_motor_rpm, 255, 880);  // plc mx analog value 880
       // right_plc = pwm_to_analog(right_motor_rpm, 255, 880); // plc mx analog value 880
       // std::cout<<"left_pwm --- > "<<left_pwm<<" right_pwm ----> "<<right_pwm<<std::endl;
