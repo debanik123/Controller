@@ -91,15 +91,16 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
 
     else
     {
+      rc = modbus_set_slave(ctx_plc, 1);
+
       double diff_lr_plc = left_plc - right_plc;
       RCLCPP_INFO(this->get_logger(), "diff_lr_plc: %f", diff_lr_plc);
-
       if (diff_lr_plc > diff_lr_plc_threshold) 
       {
-        rc = modbus_write_bit(ctx_plc, 2048, 1);
-        rc = modbus_write_bit(ctx_plc, 2049, 0);
-        rc = modbus_write_bit(ctx_plc, 2050, 1);
-        rc = modbus_write_bit(ctx_plc, 2051, 0);
+        rc = modbus_write_bit(ctx_plc, 2048, 0);
+        rc = modbus_write_bit(ctx_plc, 2049, 1);
+        rc = modbus_write_bit(ctx_plc, 2050, 0);
+        rc = modbus_write_bit(ctx_plc, 2051, 1);
         RCLCPP_INFO(this->get_logger(), "Turn Right");
         right_plc = right_plc;
         left_plc *= 1.35;
@@ -110,10 +111,10 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
       }
       else if (diff_lr_plc < -diff_lr_plc_threshold) 
       {
-        rc = modbus_write_bit(ctx_plc, 2048, 1);
-        rc = modbus_write_bit(ctx_plc, 2049, 0);
-        rc = modbus_write_bit(ctx_plc, 2050, 1);
-        rc = modbus_write_bit(ctx_plc, 2051, 0);
+        rc = modbus_write_bit(ctx_plc, 2048, 0);
+        rc = modbus_write_bit(ctx_plc, 2049, 1);
+        rc = modbus_write_bit(ctx_plc, 2050, 0);
+        rc = modbus_write_bit(ctx_plc, 2051, 1);
         RCLCPP_INFO(this->get_logger(), "Turn Left");
         right_plc *= 1.35;
         left_plc = left_plc;
@@ -125,18 +126,19 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
 
       else if(linear_x <= 0.1)
       {
+        rc = modbus_write_bit(ctx_plc, 2048, 1);
+        rc = modbus_write_bit(ctx_plc, 2049, 0);
+        rc = modbus_write_bit(ctx_plc, 2050, 1);
+        rc = modbus_write_bit(ctx_plc, 2051, 0);
+      }
+      else
+      {
+        
         rc = modbus_write_bit(ctx_plc, 2048, 0);
         rc = modbus_write_bit(ctx_plc, 2049, 1);
         rc = modbus_write_bit(ctx_plc, 2050, 0);
         rc = modbus_write_bit(ctx_plc, 2051, 1);
 
-      }
-      else
-      {
-        rc = modbus_write_bit(ctx_plc, 2048, 1);
-        rc = modbus_write_bit(ctx_plc, 2049, 0);
-        rc = modbus_write_bit(ctx_plc, 2050, 1);
-        rc = modbus_write_bit(ctx_plc, 2051, 0);
         RCLCPP_INFO(this->get_logger(), "Moving straight");
         right_plc = right_plc*1.5;
         left_plc = left_plc*1.5;
@@ -151,11 +153,9 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
 
       }
 
-      rc = modbus_set_slave(ctx_plc, 1);
+      
       motor_write_reg[0] = right_plc;
       motor_write_reg[1] = left_plc;
-
-      
       rc = modbus_write_registers(ctx_plc, 4096, 2, motor_write_reg);
 
       if (rc == -1)
