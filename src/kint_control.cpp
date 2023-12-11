@@ -140,8 +140,8 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
         rc = modbus_write_bit(ctx_plc, 2051, 1);
 
         RCLCPP_INFO(this->get_logger(), "Moving straight");
-        right_plc = right_plc*1.5;
-        left_plc = left_plc*1.5;
+        right_plc = right_plc*1.35;
+        left_plc = left_plc*1.35;
         if(left_plc>875)
         {
           left_plc = 875;
