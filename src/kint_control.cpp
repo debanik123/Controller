@@ -16,6 +16,9 @@ class kint_control : public rclcpp::Node
     {
         CmdVelSub = this->create_subscription<geometry_msgs::msg::Twist>("cmd_vel", 10, std::bind(&kint_control::CmdVelCb, this, _1));
         PLCPublisher = this->create_publisher<std_msgs::msg::Int16MultiArray>("plc_data", 10);
+        ctx_plc = modbus_new_rtu("/dev/ttyUSB0", 115200, 'N', 8, 1);
+        modbus_connect(ctx_plc);
+
     }
   public:
     ~kint_control();
@@ -46,6 +49,9 @@ class kint_control : public rclcpp::Node
 
     const double diff_lr_plc_threshold =8.0;
     double linear_x, angular_z;
+    modbus_t *ctx_plc = NULL;
+    int status1;
+    
     
     
 };
@@ -72,99 +78,86 @@ float kint_control::mapFloat(float x, float in_min, float in_max, float out_min,
 
 
 void kint_control::plc_modbus(double left_plc, double right_plc)
-{
-    modbus_t *ctx_plc = NULL;
+{ 
     uint16_t motor_write_reg[1] = {};
+    // int rc; 
+    
+    modbus_set_slave(ctx_plc, 1);
 
-    int rc;
-
-    ctx_plc = modbus_new_rtu("/dev/ttyUSB0", 115200, 'N', 8, 1);
-    int status1 = modbus_connect(ctx_plc);
-
-    if (status1 == -1)
+    double diff_lr_plc = left_plc - right_plc;
+    RCLCPP_INFO(this->get_logger(), "diff_lr_plc: %f", diff_lr_plc);
+    if (diff_lr_plc > diff_lr_plc_threshold) 
     {
-        RCLCPP_ERROR(this->get_logger(), "PLC Connection failed");
-        modbus_close(ctx_plc);
-        modbus_free(ctx_plc);
-        return;
+      modbus_write_bit(ctx_plc, 2048, 0);
+      modbus_write_bit(ctx_plc, 2049, 1);
+      modbus_write_bit(ctx_plc, 2050, 0);
+      modbus_write_bit(ctx_plc, 2051, 1);
+      RCLCPP_INFO(this->get_logger(), "Turn Right");
+      right_plc = right_plc;
+      left_plc *= 1.35;
+      if(left_plc>875)
+      {
+        left_plc = 875;
+      }
+    }
+    else if (diff_lr_plc < -diff_lr_plc_threshold) 
+    {
+      modbus_write_bit(ctx_plc, 2048, 0);
+      modbus_write_bit(ctx_plc, 2049, 1);
+      modbus_write_bit(ctx_plc, 2050, 0);
+      modbus_write_bit(ctx_plc, 2051, 1);
+      RCLCPP_INFO(this->get_logger(), "Turn Left");
+      right_plc *= 1.35;
+      left_plc = left_plc;
+      if(right_plc>875)
+      {
+        right_plc = 875;
+      }
     }
 
+    else if(linear_x <= 0.1)
+    {
+      modbus_write_bit(ctx_plc, 2048, 1);
+      modbus_write_bit(ctx_plc, 2049, 0);
+      modbus_write_bit(ctx_plc, 2050, 1);
+      modbus_write_bit(ctx_plc, 2051, 0);
+    }
     else
     {
-      rc = modbus_set_slave(ctx_plc, 1);
-
-      double diff_lr_plc = left_plc - right_plc;
-      RCLCPP_INFO(this->get_logger(), "diff_lr_plc: %f", diff_lr_plc);
-      if (diff_lr_plc > diff_lr_plc_threshold) 
-      {
-        rc = modbus_write_bit(ctx_plc, 2048, 0);
-        rc = modbus_write_bit(ctx_plc, 2049, 1);
-        rc = modbus_write_bit(ctx_plc, 2050, 0);
-        rc = modbus_write_bit(ctx_plc, 2051, 1);
-        RCLCPP_INFO(this->get_logger(), "Turn Right");
-        right_plc = right_plc;
-        left_plc *= 1.35;
-        if(left_plc>875)
-        {
-          left_plc = 875;
-        }
-      }
-      else if (diff_lr_plc < -diff_lr_plc_threshold) 
-      {
-        rc = modbus_write_bit(ctx_plc, 2048, 0);
-        rc = modbus_write_bit(ctx_plc, 2049, 1);
-        rc = modbus_write_bit(ctx_plc, 2050, 0);
-        rc = modbus_write_bit(ctx_plc, 2051, 1);
-        RCLCPP_INFO(this->get_logger(), "Turn Left");
-        right_plc *= 1.35;
-        left_plc = left_plc;
-        if(right_plc>875)
-        {
-          right_plc = 875;
-        }
-      }
-
-      else if(linear_x <= 0.1)
-      {
-        rc = modbus_write_bit(ctx_plc, 2048, 1);
-        rc = modbus_write_bit(ctx_plc, 2049, 0);
-        rc = modbus_write_bit(ctx_plc, 2050, 1);
-        rc = modbus_write_bit(ctx_plc, 2051, 0);
-      }
-      else
-      {
-        
-        rc = modbus_write_bit(ctx_plc, 2048, 0);
-        rc = modbus_write_bit(ctx_plc, 2049, 1);
-        rc = modbus_write_bit(ctx_plc, 2050, 0);
-        rc = modbus_write_bit(ctx_plc, 2051, 1);
-
-        RCLCPP_INFO(this->get_logger(), "Moving straight");
-        right_plc = right_plc*1.35;
-        left_plc = left_plc*1.35;
-        if(left_plc>875)
-        {
-          left_plc = 875;
-        }
-        if(right_plc>875)
-        {
-          right_plc = 875;
-        }
-
-      }
-
       
-      motor_write_reg[0] = right_plc;
-      motor_write_reg[1] = left_plc;
-      rc = modbus_write_registers(ctx_plc, 4096, 2, motor_write_reg);
+      modbus_write_bit(ctx_plc, 2048, 0);
+      modbus_write_bit(ctx_plc, 2049, 1);
+      modbus_write_bit(ctx_plc, 2050, 0);
+      modbus_write_bit(ctx_plc, 2051, 1);
 
-      if (rc == -1)
+      RCLCPP_INFO(this->get_logger(), "Moving straight");
+      right_plc = right_plc*1.35;
+      left_plc = left_plc*1.35;
+      if(left_plc>875)
       {
-          RCLCPP_ERROR(this->get_logger(), "Failed to write data Plc for motor %s", modbus_strerror(errno));
+        left_plc = 875;
       }
-      // modbus_close(ctx_plc);
-      // modbus_free(ctx_plc);
+      if(right_plc>875)
+      {
+        right_plc = 875;
+      }
+
     }
+
+    
+    motor_write_reg[0] = right_plc;
+    motor_write_reg[1] = left_plc;
+    modbus_write_registers(ctx_plc, 4096, 2, motor_write_reg);
+
+    // modbus_close(ctx_plc);
+    // modbus_free(ctx_plc);
+
+    // if (rc == -1)
+    // {
+    //     RCLCPP_ERROR(this->get_logger(), "Failed to write data Plc for motor %s");
+    // }
+    
+    
 }
 
 void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
@@ -224,9 +217,8 @@ double kint_control::wrapping(float v)
 
 kint_control::~kint_control()
 {
-
-    modbus_close(ctx);
-    modbus_free(ctx);
+  modbus_close(ctx_plc);
+  modbus_free(ctx_plc);
 }
 
 int main(int argc, char * argv[])
