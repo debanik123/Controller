@@ -147,15 +147,15 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
     
     motor_write_reg[0] = right_plc;
     motor_write_reg[1] = left_plc;
-    modbus_write_registers(ctx_plc, 4096, 2, motor_write_reg);
+    int rc = modbus_write_registers(ctx_plc, 4096, 2, motor_write_reg);
 
     // modbus_close(ctx_plc);
     // modbus_free(ctx_plc);
 
-    // if (rc == -1)
-    // {
-    //     RCLCPP_ERROR(this->get_logger(), "Failed to write data Plc for motor %s");
-    // }
+    if (rc == -1)
+    {
+        RCLCPP_ERROR(this->get_logger(), "Failed to write data Plc for motor %s");
+    }
     
     
 }
