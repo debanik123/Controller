@@ -4,6 +4,7 @@
 #include <geometry_msgs/msg/twist.hpp>
 #include <modbus/modbus.h>
 #include <cmath>
+#include "std_srvs/srv/trigger.hpp"
 
 using std::placeholders::_1;
 using namespace std::chrono_literals;
@@ -14,10 +15,18 @@ class kint_control : public rclcpp::Node
     kint_control()
     : Node("kint_control_node")
     {
-        CmdVelSub = this->create_subscription<geometry_msgs::msg::Twist>("cmd_vel", 10, std::bind(&kint_control::CmdVelCb, this, _1));
-        PLCPublisher = this->create_publisher<std_msgs::msg::Int16MultiArray>("plc_data", 10);
-        ctx_plc = modbus_new_rtu("/dev/ttyUSB0", 115200, 'N', 8, 1);
-        modbus_connect(ctx_plc);
+      declare_parameter("timer_period_s", 1);
+      auto timer_period_s = std::chrono::seconds(get_parameter("timer_period_s").as_int());
+      CmdVelSub = this->create_subscription<geometry_msgs::msg::Twist>("cmd_vel", 10, std::bind(&kint_control::CmdVelCb, this, _1));
+      PLCPublisher = this->create_publisher<std_msgs::msg::Int16MultiArray>("plc_data", 10);
+
+      start_followme_loop_client = create_client<std_srvs::srv::Trigger>("start_followme_loop");
+      stop_followme_loop_client = create_client<std_srvs::srv::Trigger>("stop_followme_loop");
+      
+      timer_ = create_wall_timer(timer_period_s, std::bind(&kint_control::timer_callback, this));
+
+      ctx_plc = modbus_new_rtu("/dev/ttyUSB0", 115200, 'N', 8, 1);
+      modbus_connect(ctx_plc);
 
     }
   public:
@@ -32,6 +41,11 @@ class kint_control : public rclcpp::Node
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr CmdVelSub;
     rclcpp::Publisher<std_msgs::msg::Int16MultiArray>::SharedPtr PLCPublisher;
 
+    rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr start_followme_loop_client;
+    rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr stop_followme_loop_client;
+
+    rclcpp::TimerBase::SharedPtr timer_;
+    void timer_callback();
     // double K=300;  // twist factor
     // double r = 0.207; // wheel radius 
     // double K = 60.0/(2 * 3.141592 * wheel_radius);
@@ -51,11 +65,25 @@ class kint_control : public rclcpp::Node
     double linear_x, angular_z;
     modbus_t *ctx_plc = NULL;
     int status1;
+
     
     
     
 };
+void kint_control::timer_callback()
+{
+  if (!start_followme_loop_client->wait_for_service(1s) || !stop_followme_loop_client->wait_for_service(1s))
+  {
+      RCLCPP_ERROR(get_logger(), "Failed to connect to the image save service");
+      return;
+  }
 
+  auto request = std::make_shared<std_srvs::srv::Trigger::Request>();
+
+  auto future1 = start_followme_loop_client->async_send_request(request);
+
+  auto future2 = stop_followme_loop_client->async_send_request(request);
+}
 double kint_control::Sqrt(double x, double y)
 {
   double h = hypot(x, y);
