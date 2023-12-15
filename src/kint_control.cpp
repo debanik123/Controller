@@ -22,7 +22,7 @@ class kint_control : public rclcpp::Node
 
       start_followme_loop_client = create_client<std_srvs::srv::Trigger>("start_followme_loop");
       stop_followme_loop_client = create_client<std_srvs::srv::Trigger>("stop_followme_loop");
-      
+
       timer_ = create_wall_timer(timer_period_s, std::bind(&kint_control::timer_callback, this));
 
       ctx_plc = modbus_new_rtu("/dev/ttyUSB0", 115200, 'N', 8, 1);
@@ -77,12 +77,20 @@ void kint_control::timer_callback()
       RCLCPP_ERROR(get_logger(), "Failed to connect to the image save service");
       return;
   }
+  uint8_t toggle[1];
+  modbus_read_bits(ctx_plc, 1025, 1, toggle);
 
   auto request = std::make_shared<std_srvs::srv::Trigger::Request>();
 
-  auto future1 = start_followme_loop_client->async_send_request(request);
+  if(toggle[0] == 1)
+  {
+    auto future1 = start_followme_loop_client->async_send_request(request);
+  }
+  if(toggle[0] == 1)
+  {
+    auto future2 = stop_followme_loop_client->async_send_request(request);
+  }
 
-  auto future2 = stop_followme_loop_client->async_send_request(request);
 }
 double kint_control::Sqrt(double x, double y)
 {
