@@ -77,19 +77,23 @@ void kint_control::timer_callback()
       RCLCPP_ERROR(get_logger(), "Failed to connect to the image save service");
       return;
   }
+
+  static uint8_t prev_toggle = 0;
+  auto request = std::make_shared<std_srvs::srv::Trigger::Request>();
+
   uint8_t toggle[1];
   modbus_read_bits(ctx_plc, 1025, 1, toggle);
 
-  auto request = std::make_shared<std_srvs::srv::Trigger::Request>();
-
-  if(toggle[0] == 1)
+  if(toggle[0] == 1 && prev_toggle == 0)
   {
     auto future1 = start_followme_loop_client->async_send_request(request);
   }
-  if(toggle[0] == 0)
+  if(toggle[0] == 0 && prev_toggle == 1)
   {
     auto future2 = stop_followme_loop_client->async_send_request(request);
   }
+
+  prev_toggle = toggle[0];
 
 }
 double kint_control::Sqrt(double x, double y)
