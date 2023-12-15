@@ -86,7 +86,7 @@ void kint_control::timer_callback()
   {
     auto future1 = start_followme_loop_client->async_send_request(request);
   }
-  if(toggle[0] == 1)
+  if(toggle[0] == 0)
   {
     auto future2 = stop_followme_loop_client->async_send_request(request);
   }
