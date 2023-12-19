@@ -78,6 +78,8 @@ void kint_control::timer_callback()
       return;
   }
 
+  static std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
+
   uint16_t tab_reg[64];
   static uint16_t prev_toggle = 0;
   
@@ -92,11 +94,25 @@ void kint_control::timer_callback()
   {
     auto future1 = start_followme_loop_client->async_send_request(request);
     std::cout<<"start_followme_loop_client -----------> "<<tab_reg[0]<<std::endl;
+
+    start_time = std::chrono::steady_clock::now(); // Record the start time
+
   }
   if(tab_reg[0] == 0 && prev_toggle == 1)
   {
     auto future2 = stop_followme_loop_client->async_send_request(request);
     std::cout<<"stop_followme_loop_client ------------------> "<<tab_reg[0]<<std::endl;
+
+    // Calculate the elapsed time
+    auto end_time = std::chrono::steady_clock::now();
+    auto elapsed_time = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count();
+
+    if (elapsed_time <= 5)
+    {
+      std::cout << "Toggling happened within 5 seconds." << std::endl;
+      // std::system("sudo shutdown -h now");
+    }
+
   }
 
   prev_toggle = tab_reg[0];
