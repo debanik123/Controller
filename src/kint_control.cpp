@@ -72,28 +72,38 @@ class kint_control : public rclcpp::Node
 };
 void kint_control::timer_callback()
 {
-  if (!start_followme_loop_client->wait_for_service(1s) || !stop_followme_loop_client->wait_for_service(1s))
-  {
-      RCLCPP_ERROR(get_logger(), "Failed to connect to the image save service");
-      return;
-  }
+  // if (!start_followme_loop_client->wait_for_service(1s) || !stop_followme_loop_client->wait_for_service(1s))
+  // {
+  //     RCLCPP_ERROR(get_logger(), "Failed to connect to the image save service");
+  //     return;
+  // }
 
   static uint8_t prev_toggle = 0;
   auto request = std::make_shared<std_srvs::srv::Trigger::Request>();
 
-  uint8_t toggle[1];
-  modbus_read_bits(ctx_plc, 1025, 1, toggle);
+  // uint8_t toggle[1];
+  uint16_t tab_reg[64];
+  // modbus_read_bits(ctx_plc, 1025, 1, toggle);
+  modbus_set_slave(ctx_plc, 1);
+  int rc = modbus_read_registers(ctx_plc, 4098, 1, tab_reg);
+  std::cout <<"\n "<< "Reg Count " <<rc << std::endl;
+  // for (int i=0; i < rc; i++) 
+  // {
+  std::cout<<"reg data --> "<<tab_reg[0]<<std::endl;
+  // }
 
-  if(toggle[0] == 1 && prev_toggle == 0)
-  {
-    auto future1 = start_followme_loop_client->async_send_request(request);
-  }
-  if(toggle[0] == 0 && prev_toggle == 1)
-  {
-    auto future2 = stop_followme_loop_client->async_send_request(request);
-  }
 
-  prev_toggle = toggle[0];
+
+  // if(toggle[0] == 1 && prev_toggle == 0)
+  // {
+  //   auto future1 = start_followme_loop_client->async_send_request(request);
+  // }
+  // if(toggle[0] == 0 && prev_toggle == 1)
+  // {
+  //   auto future2 = stop_followme_loop_client->async_send_request(request);
+  // }
+
+  // prev_toggle = toggle[0];
 
 }
 double kint_control::Sqrt(double x, double y)
