@@ -72,7 +72,7 @@ class kint_control : public rclcpp::Node
 };
 void kint_control::timer_callback()
 {
-  if (!start_followme_loop_client->wait_for_service(1s) || !stop_followme_loop_client->wait_for_service(1s))
+  if (!start_followme_loop_client->wait_for_service(15s) || !stop_followme_loop_client->wait_for_service(15s))
   {
       RCLCPP_ERROR(get_logger(), "Failed to connect to the image save service");
       return;
