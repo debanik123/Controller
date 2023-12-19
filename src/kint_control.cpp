@@ -23,7 +23,7 @@ class kint_control : public rclcpp::Node
       start_followme_loop_client = create_client<std_srvs::srv::Trigger>("start_followme_loop");
       stop_followme_loop_client = create_client<std_srvs::srv::Trigger>("stop_followme_loop");
 
-      timer_ = create_wall_timer(timer_period_s, std::bind(&kint_control::timer_callback, this));
+      timer_ = create_wall_timer(100ms, std::bind(&kint_control::timer_callback, this));
 
       ctx_plc = modbus_new_rtu("/dev/ttyUSB0", 115200, 'N', 8, 1);
       modbus_connect(ctx_plc);
