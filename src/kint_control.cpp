@@ -72,7 +72,7 @@ class kint_control : public rclcpp::Node
 };
 void kint_control::timer_callback()
 {
-  if (!start_followme_loop_client->wait_for_service(15s) || !stop_followme_loop_client->wait_for_service(15s))
+  if (!start_followme_loop_client->wait_for_service(300s) || !stop_followme_loop_client->wait_for_service(300s))
   {
       RCLCPP_ERROR(get_logger(), "Failed to connect to the image save service");
       return;
@@ -110,7 +110,7 @@ void kint_control::timer_callback()
     if (elapsed_time <= 3)
     {
       std::cout << "Toggling happened within 3 seconds." << std::endl;
-      std::system("sudo shutdown -h now");
+      // std::system("sudo shutdown -h now");
     }
 
   }
