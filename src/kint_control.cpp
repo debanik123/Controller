@@ -73,10 +73,18 @@ void kint_control::timer_callback()
   static std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
 
   uint16_t tab_reg[64];
+  uint16_t power_trigger[64];
   static uint16_t prev_toggle = 0;
   
   modbus_set_slave(ctx_plc, 1);
   int rc = modbus_read_registers(ctx_plc, 4098, 1, tab_reg);
+
+  modbus_read_registers(ctx_plc, 4099, 1, power_trigger);
+  if(power_trigger[0] == 1)
+  {
+    std::cout << "Power off jetson devices" << std::endl;
+    // std::system("shutdown -h now");
+  }
 
   std_msgs::msg::Int16 message;
   // std::cout<<"reg data --> "<<tab_reg[0]<<std::endl;
@@ -104,7 +112,7 @@ void kint_control::timer_callback()
     {
       std::cout << "Toggling happened within 2 seconds." << std::endl;
       //sudo chmod u+s /sbin/shutdown
-      std::system("shutdown -h now");
+      // std::system("shutdown -h now");
     }
 
   }
