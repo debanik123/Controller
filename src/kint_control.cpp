@@ -107,7 +107,7 @@ void kint_control::timer_callback()
     auto end_time = std::chrono::steady_clock::now();
     auto elapsed_time = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count();
 
-    if (elapsed_time <= 3)
+    if (elapsed_time <= 2)
     {
       std::cout << "Toggling happened within 3 seconds." << std::endl;
       //sudo chmod u+s /sbin/shutdown
