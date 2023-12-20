@@ -111,7 +111,7 @@ void kint_control::timer_callback()
     {
       std::cout << "Toggling happened within 3 seconds." << std::endl;
       //sudo chmod u+s /sbin/shutdown
-      // std::system("shutdown -h now");
+      std::system("shutdown -h now");
     }
 
   }
