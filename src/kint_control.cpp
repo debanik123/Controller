@@ -107,10 +107,10 @@ void kint_control::timer_callback()
     auto end_time = std::chrono::steady_clock::now();
     auto elapsed_time = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count();
 
-    if (elapsed_time <= 5)
+    if (elapsed_time <= 3)
     {
-      std::cout << "Toggling happened within 5 seconds." << std::endl;
-      // std::system("sudo shutdown -h now");
+      std::cout << "Toggling happened within 3 seconds." << std::endl;
+      std::system("sudo shutdown -h now");
     }
 
   }
