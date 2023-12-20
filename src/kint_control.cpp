@@ -20,7 +20,7 @@ class kint_control : public rclcpp::Node
       auto timer_period_s = std::chrono::seconds(get_parameter("timer_period_s").as_int());
       CmdVelSub = this->create_subscription<geometry_msgs::msg::Twist>("cmd_vel", 10, std::bind(&kint_control::CmdVelCb, this, _1));
       PLCPublisher = this->create_publisher<std_msgs::msg::Int16MultiArray>("plc_data", 10);
-      followme_loop_pub_ = this->create_publisher<std_msgs::msg::Int16>("followme_loop", 10);
+      followme_loop_publisher_ = this->create_publisher<std_msgs::msg::Int16>("followme_loop", 10);
       // start_followme_loop_client = create_client<std_srvs::srv::Trigger>("start_followme_loop");
       // stop_followme_loop_client = create_client<std_srvs::srv::Trigger>("stop_followme_loop");
 
@@ -41,7 +41,7 @@ class kint_control : public rclcpp::Node
 
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr CmdVelSub;
     rclcpp::Publisher<std_msgs::msg::Int16MultiArray>::SharedPtr PLCPublisher;
-    rclcpp::Publisher<std_msgs::msg::Int16>::SharedPtr followme_loop_pub_;
+    rclcpp::Publisher<std_msgs::msg::Int16>::SharedPtr followme_loop_publisher_;
 
     rclcpp::TimerBase::SharedPtr timer_;
     void timer_callback();
