@@ -4,7 +4,8 @@
 #include <geometry_msgs/msg/twist.hpp>
 #include <modbus/modbus.h>
 #include <cmath>
-#include "std_srvs/srv/trigger.hpp"
+// #include "std_srvs/srv/trigger.hpp"
+#include <std_msgs/msg/int16.hpp>
 
 using std::placeholders::_1;
 using namespace std::chrono_literals;
@@ -19,9 +20,9 @@ class kint_control : public rclcpp::Node
       auto timer_period_s = std::chrono::seconds(get_parameter("timer_period_s").as_int());
       CmdVelSub = this->create_subscription<geometry_msgs::msg::Twist>("cmd_vel", 10, std::bind(&kint_control::CmdVelCb, this, _1));
       PLCPublisher = this->create_publisher<std_msgs::msg::Int16MultiArray>("plc_data", 10);
-
-      start_followme_loop_client = create_client<std_srvs::srv::Trigger>("start_followme_loop");
-      stop_followme_loop_client = create_client<std_srvs::srv::Trigger>("stop_followme_loop");
+      followme_loop_pub_ = this->create_publisher<std_msgs::msg::Int16>("followme_loop", 10);
+      // start_followme_loop_client = create_client<std_srvs::srv::Trigger>("start_followme_loop");
+      // stop_followme_loop_client = create_client<std_srvs::srv::Trigger>("stop_followme_loop");
 
       timer_ = create_wall_timer(100ms, std::bind(&kint_control::timer_callback, this));
 
@@ -40,9 +41,7 @@ class kint_control : public rclcpp::Node
 
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr CmdVelSub;
     rclcpp::Publisher<std_msgs::msg::Int16MultiArray>::SharedPtr PLCPublisher;
-
-    rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr start_followme_loop_client;
-    rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr stop_followme_loop_client;
+    rclcpp::Publisher<std_msgs::msg::Int16>::SharedPtr followme_loop_pub_;
 
     rclcpp::TimerBase::SharedPtr timer_;
     void timer_callback();
@@ -72,11 +71,6 @@ class kint_control : public rclcpp::Node
 };
 void kint_control::timer_callback()
 {
-  if (!start_followme_loop_client->wait_for_service(300s) || !stop_followme_loop_client->wait_for_service(300s))
-  {
-      RCLCPP_ERROR(get_logger(), "Failed to connect to the image save service");
-      return;
-  }
 
   static std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
 
@@ -88,21 +82,25 @@ void kint_control::timer_callback()
   
   modbus_set_slave(ctx_plc, 1);
   int rc = modbus_read_registers(ctx_plc, 4098, 1, tab_reg);
+
+  std_msgs::msg::Int16 message;
   // std::cout<<"reg data --> "<<tab_reg[0]<<std::endl;
 
   if(tab_reg[0] == 1 && prev_toggle == 0)
   {
-    auto future1 = start_followme_loop_client->async_send_request(request);
-    std::cout<<"start_followme_loop_client -----------> "<<tab_reg[0]<<std::endl;
+    // auto future1 = start_followme_loop_client->async_send_request(request);
+    message.data = 1;  // Set the desired value
+    followme_loop_publisher_->publish(message);
+    std::cout<<"start_followme_loop_ -----------> "<<tab_reg[0]<<std::endl;
 
     start_time = std::chrono::steady_clock::now(); // Record the start time
 
   }
   if(tab_reg[0] == 0 && prev_toggle == 1)
   {
-    auto future2 = stop_followme_loop_client->async_send_request(request);
-    std::cout<<"stop_followme_loop_client ------------------> "<<tab_reg[0]<<std::endl;
-
+    std::cout<<"stop_followme_loop_ ------------------> "<<tab_reg[0]<<std::endl;
+    message.data = 0;  // Set the desired value
+    followme_loop_publisher_->publish(message);
     // Calculate the elapsed time
     auto end_time = std::chrono::steady_clock::now();
     auto elapsed_time = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count();
