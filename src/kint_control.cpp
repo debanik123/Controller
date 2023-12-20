@@ -21,8 +21,6 @@ class kint_control : public rclcpp::Node
       CmdVelSub = this->create_subscription<geometry_msgs::msg::Twist>("cmd_vel", 10, std::bind(&kint_control::CmdVelCb, this, _1));
       PLCPublisher = this->create_publisher<std_msgs::msg::Int16MultiArray>("plc_data", 10);
       followme_loop_publisher_ = this->create_publisher<std_msgs::msg::Int16>("followme_loop", 10);
-      // start_followme_loop_client = create_client<std_srvs::srv::Trigger>("start_followme_loop");
-      // stop_followme_loop_client = create_client<std_srvs::srv::Trigger>("stop_followme_loop");
 
       timer_ = create_wall_timer(100ms, std::bind(&kint_control::timer_callback, this));
 
@@ -76,9 +74,6 @@ void kint_control::timer_callback()
 
   uint16_t tab_reg[64];
   static uint16_t prev_toggle = 0;
-  
-
-  auto request = std::make_shared<std_srvs::srv::Trigger::Request>();
   
   modbus_set_slave(ctx_plc, 1);
   int rc = modbus_read_registers(ctx_plc, 4098, 1, tab_reg);
