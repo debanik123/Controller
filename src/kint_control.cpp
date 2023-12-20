@@ -109,7 +109,7 @@ void kint_control::timer_callback()
 
     if (elapsed_time <= 2)
     {
-      std::cout << "Toggling happened within 3 seconds." << std::endl;
+      std::cout << "Toggling happened within 2 seconds." << std::endl;
       //sudo chmod u+s /sbin/shutdown
       std::system("shutdown -h now");
     }
