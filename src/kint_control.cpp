@@ -80,16 +80,12 @@ void kint_control::timer_callback()
 
   modbus_read_registers(ctx_plc, 4098, 1, tab_reg);
   modbus_read_registers(ctx_plc, 4099, 1, power_trigger);
-  
+
   if(power_trigger[0] == 0)
   {
     std::cout << "Power off jetson devices" << std::endl;
     // std::system("shutdown -h now");
   }
-
-  
-  
-
 
   std_msgs::msg::Int16 message;
   // std::cout<<"reg data --> "<<tab_reg[0]<<std::endl;
