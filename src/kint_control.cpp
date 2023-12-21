@@ -84,7 +84,7 @@ void kint_control::timer_callback()
   if(power_trigger[0] == 0)
   {
     std::cout << "Power off jetson devices" << std::endl;
-    // std::system("shutdown -h now");
+    std::system("shutdown -h now");
   }
 
   std_msgs::msg::Int16 message;
