@@ -1,0 +1,28 @@
+   if (linear_x > 0 && angular_z == 0)  // backword
+    {
+        rc = modbus_write_bit(ctx_plc, 2048, 1);
+        rc = modbus_write_bit(ctx_plc, 2049, 0);
+        rc = modbus_write_bit(ctx_plc, 2050, 1);
+        rc = modbus_write_bit(ctx_plc, 2051, 0);
+    }
+  else if (linear_< 0 && angular_z == 0)  // forward
+    {
+        rc = modbus_write_bit(ctx_plc, 2048, 0);
+        rc = modbus_write_bit(ctx_plc, 2049, 1);
+        rc = modbus_write_bit(ctx_plc, 2050, 0);
+        rc = modbus_write_bit(ctx_plc, 2051, 1);
+    }
+  else if (linearx_ == 0 && angular_z > 0) // right turn
+    {
+        rc = modbus_write_bit(ctx_plc, 2048, 1);
+        rc = modbus_write_bit(ctx_plc, 2049, 0);
+        rc = modbus_write_bit(ctx_plc, 2050, 0);
+        rc = modbus_write_bit(ctx_plc, 2051, 1);
+    }
+  else if (linear_x == 0 && angular_z < 0) // left turn
+    {
+        rc = modbus_write_bit(ctx_plc, 2048, 0);
+        rc = modbus_write_bit(ctx_plc, 2049, 1);
+        rc = modbus_write_bit(ctx_plc, 2050, 1);
+        rc = modbus_write_bit(ctx_plc, 2051, 0);
+    }
