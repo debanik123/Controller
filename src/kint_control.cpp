@@ -208,7 +208,7 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
       modbus_write_bit(ctx_plc, 2049, 1);
       modbus_write_bit(ctx_plc, 2050, 0);
       modbus_write_bit(ctx_plc, 2051, 1);
-      RCLCPP_INFO(this->get_logger(), "Turn Right");
+      RCLCPP_INFO(this->get_logger(), "Turn FW Right");
       right_plc = right_plc;
       left_plc *= 1.35;
       if(left_plc>875)
@@ -223,7 +223,7 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
       modbus_write_bit(ctx_plc, 2049, 1);
       modbus_write_bit(ctx_plc, 2050, 0);
       modbus_write_bit(ctx_plc, 2051, 1);
-      RCLCPP_INFO(this->get_logger(), "Turn Left");
+      RCLCPP_INFO(this->get_logger(), "Turn FW Left");
       right_plc *= 1.35;
       left_plc = left_plc;
       if(right_plc>875)
@@ -234,10 +234,8 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
     
     motor_write_reg[0] = right_plc;
     motor_write_reg[1] = left_plc;
-    int rc = modbus_write_registers(ctx_plc, 4096, 2, motor_write_reg);
 
-    modbus_close(ctx_plc);
-    modbus_free(ctx_plc);
+    int rc = modbus_write_registers(ctx_plc, 4096, 2, motor_write_reg);
 
     if (rc == -1)
     {
