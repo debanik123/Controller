@@ -22,7 +22,7 @@ class kint_control : public rclcpp::Node
       PLCPublisher = this->create_publisher<std_msgs::msg::Int16MultiArray>("plc_data", 10);
       followme_loop_publisher_ = this->create_publisher<std_msgs::msg::Int16>("followme_loop", 10);
 
-      timer_ = create_wall_timer(300ms, std::bind(&kint_control::timer_callback, this));
+      // timer_ = create_wall_timer(300ms, std::bind(&kint_control::timer_callback, this));
 
       ctx_plc = modbus_new_rtu("/dev/ttyUSB0", 115200, 'N', 8, 1);
       modbus_connect(ctx_plc);
@@ -250,6 +250,7 @@ void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
     linear_x = msg->linear.x;
     angular_z = msg->angular.z;
 
+    // std::cout << "Linear X: " << linear_x << " Angular Z: " << angular_z << std::endl;
     if(linear_x == 0.0 && angular_z == 0.0)
     {
       left_plc = 0.0;
