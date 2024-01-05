@@ -156,8 +156,6 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
 
     double diff_lr_plc = left_plc - right_plc;
     RCLCPP_INFO(this->get_logger(), "diff_lr_plc: %f", diff_lr_plc);
-    left_plc = left_plc/2.0;
-    right_plc = right_plc/2.0;
 
     if(linear_x > 0.0)
     {
@@ -166,18 +164,8 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
       modbus_write_bit(ctx_plc, 2050, 0);
       modbus_write_bit(ctx_plc, 2051, 1);
 
-      RCLCPP_INFO(this->get_logger(), "Moving straight");
-      
-      // left_plc *= 1.5; // Adjust the acceleration factor as needed
-      // right_plc *= 1.5;
-      // if(left_plc>875)
-      // {
-      //   left_plc = 875;
-      // }
-      // if(right_plc>875)
-      // {
-      //   right_plc = 875;
-      // }
+      RCLCPP_INFO(this->get_logger(), "Moving F or FR or FL");
+
     }
 
     if(linear_x == 0.0 && diff_lr_plc < -diff_lr_plc_threshold_r)
@@ -200,64 +188,6 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
       modbus_write_bit(ctx_plc, 2051, 0);
       left_plc = 325;
       right_plc = 325;
-    }
-
-    // else if (linear_x > 0.0 && diff_lr_plc > diff_lr_plc_threshold) 
-    // {
-    //   modbus_write_bit(ctx_plc, 2048, 0);
-    //   modbus_write_bit(ctx_plc, 2049, 1);
-    //   modbus_write_bit(ctx_plc, 2050, 0);
-    //   modbus_write_bit(ctx_plc, 2051, 1);
-    //   RCLCPP_INFO(this->get_logger(), "Turn Right");
-    //   right_plc = right_plc;
-    //   left_plc *= 1.8;
-    //   if(left_plc>875)
-    //   {
-    //     left_plc = 875;
-    //   }
-    // }
-
-    // else if (linear_x > 0.0 && diff_lr_plc < -diff_lr_plc_threshold) 
-    // {
-    //   modbus_write_bit(ctx_plc, 2048, 0);
-    //   modbus_write_bit(ctx_plc, 2049, 1);
-    //   modbus_write_bit(ctx_plc, 2050, 0);
-    //   modbus_write_bit(ctx_plc, 2051, 1);
-    //   RCLCPP_INFO(this->get_logger(), "Turn Left");
-    //   right_plc *= 1.8;
-    //   left_plc = left_plc;
-    //   if(right_plc>875)
-    //   {
-    //     right_plc = 875;
-    //   }
-    // }
-
-    
-
-    // else if(linear_x < 0.0)
-    // {
-    //   modbus_write_bit(ctx_plc, 2048, 1);
-    //   modbus_write_bit(ctx_plc, 2049, 0);
-    //   modbus_write_bit(ctx_plc, 2050, 1);
-    //   modbus_write_bit(ctx_plc, 2051, 0);
-    //   RCLCPP_INFO(this->get_logger(), "Moving back");
-    // }
-
-    
-
-    else
-    {
-        left_plc *= 0.5;
-        right_plc *= 0.5;
-        if (left_plc < 230.0)
-        {
-            left_plc = 0.0;
-        }
-        if (right_plc < 230.0)
-        {
-            right_plc = 0.0;
-        }
-        RCLCPP_INFO(this->get_logger(), "Moving stop");
     }
     
     motor_write_reg[0] = right_plc;
@@ -291,19 +221,8 @@ void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
       double left_wheel_vel = linear_x - (angular_z * wheelbase / 2.0);
       double right_wheel_vel = linear_x + (angular_z * wheelbase / 2.0);
 
-      // Convert wheel velocities to RPM (assuming linear relationship)
-      int left_motor_rpm = static_cast<int>(left_wheel_vel / (2 * 3.141592 * wheel_radius) * 60);
-      int right_motor_rpm = static_cast<int>(right_wheel_vel / (2 * 3.141592 * wheel_radius) * 60);
-
-      left_plc = mapFloat(left_motor_rpm, -255, 255, 220, 880);
-      right_plc = mapFloat(right_motor_rpm, -255, 255, 220, 880);
-
-
-      // RCLCPP_INFO(this->get_logger(), "Left Motor RPM: %d, Right Motor RPM: %d", left_motor_rpm, right_motor_rpm);
-      // RCLCPP_INFO(this->get_logger(), "Left Motor PLC: %f, Right Motor PLC: %f", left_plc, right_plc);
-      // left_plc = pwm_to_analog(left_motor_rpm, 255, 880);  // plc mx analog value 880
-      // right_plc = pwm_to_analog(right_motor_rpm, 255, 880); // plc mx analog value 880
-      // std::cout<<"left_pwm --- > "<<left_pwm<<" right_pwm ----> "<<right_pwm<<std::endl;
+      left_plc = mapFloat(left_wheel_vel, 0.0, 1.0, 220, 440);
+      right_plc = mapFloat(right_wheel_vel, 0.0, 1.0, 220, 440);
 
     }
     
