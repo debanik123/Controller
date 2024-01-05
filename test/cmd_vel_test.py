@@ -6,6 +6,12 @@ def calculate_wheel_velocities(linear_x, angular_z, wheelbase, wheel_radius):
     left_wheel_vel = linear_x - (angular_z * wheelbase / 2.0)
     right_wheel_vel = linear_x + (angular_z * wheelbase / 2.0)
 
+    left_wheel_vel_rot = 0.0 - (angular_z * wheelbase / 2.0)
+    right_wheel_vel_rot = 0.0 + (angular_z * wheelbase / 2.0)
+
+    print("Left Wheel Velocity for Pure Rotation:", left_wheel_vel_rot)
+    print("Right Wheel Velocity for Pure Rotation:", right_wheel_vel_rot)
+
     # Convert wheel velocities to RPM (assuming linear relationship)
     left_motor_rpm = int(left_wheel_vel / (2 * math.pi * wheel_radius) * 60)
     right_motor_rpm = int(right_wheel_vel / (2 * math.pi * wheel_radius) * 60)

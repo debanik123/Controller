@@ -168,26 +168,26 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
 
     }
 
-    if(linear_x == 0.0 && diff_lr_plc < -diff_lr_plc_threshold_r)
+    if(linear_x == 0.0 && left_wheel_vel < 0.0 && right_wheel_vel > 0.0)
     {
       RCLCPP_INFO(this->get_logger(), "IInaxis turn left");
       modbus_write_bit(ctx_plc, 2048, 1);
       modbus_write_bit(ctx_plc, 2049, 0);
       modbus_write_bit(ctx_plc, 2050, 0);
       modbus_write_bit(ctx_plc, 2051, 1);
-      left_plc = 325;
-      right_plc = 325;
+      // left_plc = 325;
+      // right_plc = 325;
     }
 
-    else if(linear_x == 0.0 && diff_lr_plc > diff_lr_plc_threshold_r)
+    else if(linear_x == 0.0 && left_wheel_vel > 0.0 && right_wheel_vel < 0.0)
     {
       RCLCPP_INFO(this->get_logger(), "IInaxis turn Right");
       modbus_write_bit(ctx_plc, 2048, 0);
       modbus_write_bit(ctx_plc, 2049, 1);
       modbus_write_bit(ctx_plc, 2050, 1);
       modbus_write_bit(ctx_plc, 2051, 0);
-      left_plc = 325;
-      right_plc = 325;
+      // left_plc = 325;
+      // right_plc = 325;
     }
     
     motor_write_reg[0] = right_plc;
