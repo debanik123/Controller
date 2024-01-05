@@ -9,8 +9,11 @@ def calculate_wheel_velocities(linear_x, angular_z, wheelbase, wheel_radius):
     left_wheel_vel_rot = 0.0 - (angular_z * wheelbase / 2.0)
     right_wheel_vel_rot = 0.0 + (angular_z * wheelbase / 2.0)
 
-    print("Left Wheel Velocity for Pure Rotation:", left_wheel_vel_rot)
-    print("Right Wheel Velocity for Pure Rotation:", right_wheel_vel_rot)
+    mapped_left_wheel_vel_rot = map_to_range(left_wheel_vel_rot, 0.0, 1.0, 220, 440)
+    mapped_right_wheel_vel_rot = map_to_range(right_wheel_vel_rot, 0.0, 1.0, 220, 440)
+
+    print("Left Wheel Velocity for Pure Rotation:", left_wheel_vel_rot, "Mapped Left Wheel Velocity Rot:", mapped_left_wheel_vel_rot)
+    print("Right Wheel Velocity for Pure Rotation:", right_wheel_vel_rot, "Mapped Right Wheel Velocity Rot:", mapped_right_wheel_vel_rot)
 
     # Convert wheel velocities to RPM (assuming linear relationship)
     left_motor_rpm = int(left_wheel_vel / (2 * math.pi * wheel_radius) * 60)
