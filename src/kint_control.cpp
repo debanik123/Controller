@@ -59,7 +59,7 @@ class kint_control : public rclcpp::Node
     double Sqrt(double x, double y);
 
     const double diff_lr_plc_threshold =8.0;
-    const double diff_lr_plc_threshold_r =6.0;
+    const double diff_lr_plc_threshold_r =1.0;
     double linear_x, angular_z;
     modbus_t *ctx_plc = NULL;
     int status1;
@@ -162,8 +162,8 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
       modbus_write_bit(ctx_plc, 2049, 0);
       modbus_write_bit(ctx_plc, 2050, 0);
       modbus_write_bit(ctx_plc, 2051, 1);
-      left_plc = 350;
-      right_plc = 350;
+      left_plc = 325;
+      right_plc = 325;
     }
 
     else if(linear_x == 0.0 && diff_lr_plc > diff_lr_plc_threshold_r)
@@ -173,8 +173,8 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
       modbus_write_bit(ctx_plc, 2049, 1);
       modbus_write_bit(ctx_plc, 2050, 1);
       modbus_write_bit(ctx_plc, 2051, 0);
-      left_plc = 350;
-      right_plc = 350;
+      left_plc = 325;
+      right_plc = 325;
     }
 
     else if (linear_x > 0.0 && diff_lr_plc > diff_lr_plc_threshold) 
