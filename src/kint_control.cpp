@@ -36,6 +36,7 @@ class kint_control : public rclcpp::Node
     void plc_modbus(double left_plc, double right_plc);
     double wrapping(float v);
     float mapFloat(float x, float in_min, float in_max, float out_min, float out_max);
+    bool isInRange(double value, double lowerBound, double upperBound);
 
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr CmdVelSub;
     rclcpp::Publisher<std_msgs::msg::Int16MultiArray>::SharedPtr PLCPublisher;
@@ -142,6 +143,9 @@ float kint_control::mapFloat(float x, float in_min, float in_max, float out_min,
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
+bool kint_control::isInRange(double value, double lowerBound, double upperBound) {
+    return (value > lowerBound && value < upperBound);
+}
 
 void kint_control::plc_modbus(double left_plc, double right_plc)
 { 
@@ -155,27 +159,48 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
     left_plc = left_plc/2.0;
     right_plc = right_plc/2.0;
 
-    if(linear_x == 0.0 && diff_lr_plc < -diff_lr_plc_threshold_r)
+    if(linear_x > 0.0 && isInRange(-diff_lr_plc_threshold_r, diff_lr_plc_threshold_r))
     {
-      RCLCPP_INFO(this->get_logger(), "IInaxis turn left");
-      modbus_write_bit(ctx_plc, 2048, 1);
-      modbus_write_bit(ctx_plc, 2049, 0);
-      modbus_write_bit(ctx_plc, 2050, 0);
-      modbus_write_bit(ctx_plc, 2051, 1);
-      left_plc = 325;
-      right_plc = 325;
-    }
-
-    else if(linear_x == 0.0 && diff_lr_plc > diff_lr_plc_threshold_r)
-    {
-      RCLCPP_INFO(this->get_logger(), "IInaxis turn Right");
       modbus_write_bit(ctx_plc, 2048, 0);
       modbus_write_bit(ctx_plc, 2049, 1);
-      modbus_write_bit(ctx_plc, 2050, 1);
-      modbus_write_bit(ctx_plc, 2051, 0);
-      left_plc = 325;
-      right_plc = 325;
+      modbus_write_bit(ctx_plc, 2050, 0);
+      modbus_write_bit(ctx_plc, 2051, 1);
+
+      RCLCPP_INFO(this->get_logger(), "Moving straight");
+      
+      left_plc *= 1.8; // Adjust the acceleration factor as needed
+      right_plc *= 1.8;
+      if(left_plc>875)
+      {
+        left_plc = 875;
+      }
+      if(right_plc>875)
+      {
+        right_plc = 875;
+      }
     }
+
+    // if(linear_x == 0.0 && diff_lr_plc < -diff_lr_plc_threshold_r)
+    // {
+    //   RCLCPP_INFO(this->get_logger(), "IInaxis turn left");
+    //   modbus_write_bit(ctx_plc, 2048, 1);
+    //   modbus_write_bit(ctx_plc, 2049, 0);
+    //   modbus_write_bit(ctx_plc, 2050, 0);
+    //   modbus_write_bit(ctx_plc, 2051, 1);
+    //   left_plc = 325;
+    //   right_plc = 325;
+    // }
+
+    // else if(linear_x == 0.0 && diff_lr_plc > diff_lr_plc_threshold_r)
+    // {
+    //   RCLCPP_INFO(this->get_logger(), "IInaxis turn Right");
+    //   modbus_write_bit(ctx_plc, 2048, 0);
+    //   modbus_write_bit(ctx_plc, 2049, 1);
+    //   modbus_write_bit(ctx_plc, 2050, 1);
+    //   modbus_write_bit(ctx_plc, 2051, 0);
+    //   left_plc = 325;
+    //   right_plc = 325;
+    // }
 
     else if (linear_x > 0.0 && diff_lr_plc > diff_lr_plc_threshold) 
     {
@@ -207,28 +232,7 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
       }
     }
 
-    else if(linear_x > 0.0)
-    {
-      
-      modbus_write_bit(ctx_plc, 2048, 0);
-      modbus_write_bit(ctx_plc, 2049, 1);
-      modbus_write_bit(ctx_plc, 2050, 0);
-      modbus_write_bit(ctx_plc, 2051, 1);
-
-      RCLCPP_INFO(this->get_logger(), "Moving straight");
-      
-      left_plc *= 1.8; // Adjust the acceleration factor as needed
-      right_plc *= 1.8;
-      if(left_plc>875)
-      {
-        left_plc = 875;
-      }
-      if(right_plc>875)
-      {
-        right_plc = 875;
-      }
-
-    }
+    
 
     // else if(linear_x < 0.0)
     // {
