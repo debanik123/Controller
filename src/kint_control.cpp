@@ -177,32 +177,24 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
 
     else if (linear_x > 0.0 && diff_lr_plc > diff_lr_plc_threshold) 
     {
+      RCLCPP_INFO(this->get_logger(), "turn Right");
       modbus_write_bit(ctx_plc, 2048, 0);
       modbus_write_bit(ctx_plc, 2049, 1);
-      modbus_write_bit(ctx_plc, 2050, 0);
-      modbus_write_bit(ctx_plc, 2051, 1);
-      RCLCPP_INFO(this->get_logger(), "Turn Right");
-      right_plc = right_plc;
-      left_plc *= 1.35;
-      if(left_plc>875)
-      {
-        left_plc = 875;
-      }
+      modbus_write_bit(ctx_plc, 2050, 1);
+      modbus_write_bit(ctx_plc, 2051, 0);
+      right_plc = right_plc/1.35;
+      left_plc = left_plc/1.35;
     }
 
     else if (linear_x > 0.0 && diff_lr_plc < -diff_lr_plc_threshold) 
     {
-      modbus_write_bit(ctx_plc, 2048, 0);
-      modbus_write_bit(ctx_plc, 2049, 1);
+      RCLCPP_INFO(this->get_logger(), "turn left");
+      modbus_write_bit(ctx_plc, 2048, 1);
+      modbus_write_bit(ctx_plc, 2049, 0);
       modbus_write_bit(ctx_plc, 2050, 0);
       modbus_write_bit(ctx_plc, 2051, 1);
-      RCLCPP_INFO(this->get_logger(), "Turn Left");
-      right_plc *= 1.35;
-      left_plc = left_plc;
-      if(right_plc>875)
-      {
-        right_plc = 875;
-      }
+      right_plc = right_plc/1.35;
+      left_plc = left_plc/1.35;
     }
 
     else if(linear_x > 0.0)
