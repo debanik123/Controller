@@ -250,6 +250,7 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
         {
             right_plc = 0.0;
         }
+        RCLCPP_INFO(this->get_logger(), "Moving stop");
     }
     
     motor_write_reg[0] = right_plc;
