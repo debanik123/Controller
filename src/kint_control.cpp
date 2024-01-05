@@ -58,7 +58,7 @@ class kint_control : public rclcpp::Node
     const double min_rpm_threshold = 0.0;
     double Sqrt(double x, double y);
 
-    const double diff_lr_plc_threshold =8.0;
+    const double diff_lr_plc_threshold =16.0;
     const double diff_lr_plc_threshold_r =1.0;
     double linear_x, angular_z;
     modbus_t *ctx_plc = NULL;
@@ -185,7 +185,7 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
       modbus_write_bit(ctx_plc, 2051, 1);
       RCLCPP_INFO(this->get_logger(), "Turn Right");
       right_plc = right_plc;
-      left_plc *= 1.35;
+      left_plc *= 1.8;
       if(left_plc>875)
       {
         left_plc = 875;
@@ -199,7 +199,7 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
       modbus_write_bit(ctx_plc, 2050, 0);
       modbus_write_bit(ctx_plc, 2051, 1);
       RCLCPP_INFO(this->get_logger(), "Turn Left");
-      right_plc *= 1.35;
+      right_plc *= 1.8;
       left_plc = left_plc;
       if(right_plc>875)
       {
