@@ -59,6 +59,7 @@ class kint_control : public rclcpp::Node
     double Sqrt(double x, double y);
 
     const double diff_lr_plc_threshold =8.0;
+    const double diff_lr_plc_threshold_r =2.0;
     double linear_x, angular_z;
     modbus_t *ctx_plc = NULL;
     int status1;
@@ -150,87 +151,97 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
     modbus_set_slave(ctx_plc, 1);
 
     double diff_lr_plc = left_plc - right_plc;
-    // RCLCPP_INFO(this->get_logger(), "diff_lr_plc: %f", diff_lr_plc);
+    RCLCPP_INFO(this->get_logger(), "diff_lr_plc: %f", diff_lr_plc);
 
-    if(linear_x > 0.0 && angular_z > -0.01 && angular_z < 0.01)
-    {
+    // if(linear_x > 0.0 && angular_z > -0.01 && angular_z < 0.01)
+    // {
       
-      modbus_write_bit(ctx_plc, 2048, 0);
-      modbus_write_bit(ctx_plc, 2049, 1);
-      modbus_write_bit(ctx_plc, 2050, 0);
-      modbus_write_bit(ctx_plc, 2051, 1);
+    //   modbus_write_bit(ctx_plc, 2048, 0);
+    //   modbus_write_bit(ctx_plc, 2049, 1);
+    //   modbus_write_bit(ctx_plc, 2050, 0);
+    //   modbus_write_bit(ctx_plc, 2051, 1);
 
-      RCLCPP_INFO(this->get_logger(), "Moving straight");
-      right_plc = right_plc*1.35;
-      left_plc = left_plc*1.35;
-      if(left_plc>875)
-      {
-        left_plc = 875;
-      }
-      if(right_plc>875)
-      {
-        right_plc = 875;
-      }
+    //   RCLCPP_INFO(this->get_logger(), "Moving straight");
+    //   right_plc = right_plc*1.35;
+    //   left_plc = left_plc*1.35;
+    //   if(left_plc>875)
+    //   {
+    //     left_plc = 875;
+    //   }
+    //   if(right_plc>875)
+    //   {
+    //     right_plc = 875;
+    //   }
 
-    }
+    // }
 
-    if(linear_x < 0.0)
-    {
-      RCLCPP_INFO(this->get_logger(), "Moving back");
-      modbus_write_bit(ctx_plc, 2048, 1); //right b
-      modbus_write_bit(ctx_plc, 2049, 0);
-      modbus_write_bit(ctx_plc, 2050, 1);
-      modbus_write_bit(ctx_plc, 2051, 0);
-    }
+    // if(linear_x < 0.0)
+    // {
+    //   RCLCPP_INFO(this->get_logger(), "Moving back");
+    //   modbus_write_bit(ctx_plc, 2048, 1); //right b
+    //   modbus_write_bit(ctx_plc, 2049, 0);
+    //   modbus_write_bit(ctx_plc, 2050, 1);
+    //   modbus_write_bit(ctx_plc, 2051, 0);
+    // }
 
 
-    if(linear_x == 0.0 && angular_z > 0.0)
+    if(linear_x == 0.0 && diff_lr_plc < -diff_lr_plc_threshold_r)
     {
       RCLCPP_INFO(this->get_logger(), "IInaxis turn left");
       modbus_write_bit(ctx_plc, 2048, 1);
       modbus_write_bit(ctx_plc, 2049, 0);
       modbus_write_bit(ctx_plc, 2050, 0);
-      modbus_write_bit(ctx_plc, 2051, 1); 
+      modbus_write_bit(ctx_plc, 2051, 1);
+      right_plc = right_plc/1.3;
+      left_plc = left_plc/1.3;
     }
 
-    if(linear_x == 0.0 && angular_z < 0.0)
+    else if(linear_x == 0.0 && diff_lr_plc > diff_lr_plc_threshold_r)
     {
-      RCLCPP_INFO(this->get_logger(), "IInaxis turn right");
+      RCLCPP_INFO(this->get_logger(), "IInaxis turn Right");
       modbus_write_bit(ctx_plc, 2048, 0);
       modbus_write_bit(ctx_plc, 2049, 1);
       modbus_write_bit(ctx_plc, 2050, 1);
       modbus_write_bit(ctx_plc, 2051, 0);
+      right_plc = right_plc/1.3;
+      left_plc = left_plc/1.3;
     }
 
-    if (linear_x > 0.0 && angular_z < 0.0) 
+    else
     {
-      modbus_write_bit(ctx_plc, 2048, 0);
-      modbus_write_bit(ctx_plc, 2049, 1);
-      modbus_write_bit(ctx_plc, 2050, 0);
-      modbus_write_bit(ctx_plc, 2051, 1);
-      RCLCPP_INFO(this->get_logger(), "Turn FW Right");
-      right_plc = right_plc;
-      left_plc *= 1.35;
-      if(left_plc>875)
-      {
-        left_plc = 875;
-      }
+      right_plc = 0.0;
+      left_plc = 0.0;
     }
 
-    if (linear_x > 0.0 && angular_z > 0.0)
-    {
-      modbus_write_bit(ctx_plc, 2048, 0);
-      modbus_write_bit(ctx_plc, 2049, 1);
-      modbus_write_bit(ctx_plc, 2050, 0);
-      modbus_write_bit(ctx_plc, 2051, 1);
-      RCLCPP_INFO(this->get_logger(), "Turn FW Left");
-      right_plc *= 1.35;
-      left_plc = left_plc;
-      if(right_plc>875)
-      {
-        right_plc = 875;
-      }
-    }
+    // if (linear_x > 0.0 && angular_z < 0.0) 
+    // {
+    //   modbus_write_bit(ctx_plc, 2048, 0);
+    //   modbus_write_bit(ctx_plc, 2049, 1);
+    //   modbus_write_bit(ctx_plc, 2050, 0);
+    //   modbus_write_bit(ctx_plc, 2051, 1);
+    //   RCLCPP_INFO(this->get_logger(), "Turn FW Right");
+    //   right_plc = right_plc;
+    //   left_plc *= 1.35;
+    //   if(left_plc>875)
+    //   {
+    //     left_plc = 875;
+    //   }
+    // }
+
+    // if (linear_x > 0.0 && angular_z > 0.0)
+    // {
+    //   modbus_write_bit(ctx_plc, 2048, 0);
+    //   modbus_write_bit(ctx_plc, 2049, 1);
+    //   modbus_write_bit(ctx_plc, 2050, 0);
+    //   modbus_write_bit(ctx_plc, 2051, 1);
+    //   RCLCPP_INFO(this->get_logger(), "Turn FW Left");
+    //   right_plc *= 1.35;
+    //   left_plc = left_plc;
+    //   if(right_plc>875)
+    //   {
+    //     right_plc = 875;
+    //   }
+    // }
     
     motor_write_reg[0] = right_plc;
     motor_write_reg[1] = left_plc;
