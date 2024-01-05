@@ -159,7 +159,7 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
     left_plc = left_plc/2.0;
     right_plc = right_plc/2.0;
 
-    if(linear_x > 0.0 && isInRange(-diff_lr_plc_threshold_r, diff_lr_plc_threshold_r))
+    if(linear_x > 0.0)
     {
       modbus_write_bit(ctx_plc, 2048, 0);
       modbus_write_bit(ctx_plc, 2049, 1);
@@ -168,69 +168,69 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
 
       RCLCPP_INFO(this->get_logger(), "Moving straight");
       
-      left_plc *= 1.8; // Adjust the acceleration factor as needed
-      right_plc *= 1.8;
-      if(left_plc>875)
-      {
-        left_plc = 875;
-      }
-      if(right_plc>875)
-      {
-        right_plc = 875;
-      }
+      // left_plc *= 1.5; // Adjust the acceleration factor as needed
+      // right_plc *= 1.5;
+      // if(left_plc>875)
+      // {
+      //   left_plc = 875;
+      // }
+      // if(right_plc>875)
+      // {
+      //   right_plc = 875;
+      // }
     }
 
-    // if(linear_x == 0.0 && diff_lr_plc < -diff_lr_plc_threshold_r)
-    // {
-    //   RCLCPP_INFO(this->get_logger(), "IInaxis turn left");
-    //   modbus_write_bit(ctx_plc, 2048, 1);
-    //   modbus_write_bit(ctx_plc, 2049, 0);
-    //   modbus_write_bit(ctx_plc, 2050, 0);
-    //   modbus_write_bit(ctx_plc, 2051, 1);
-    //   left_plc = 325;
-    //   right_plc = 325;
-    // }
+    if(linear_x == 0.0 && diff_lr_plc < -diff_lr_plc_threshold_r)
+    {
+      RCLCPP_INFO(this->get_logger(), "IInaxis turn left");
+      modbus_write_bit(ctx_plc, 2048, 1);
+      modbus_write_bit(ctx_plc, 2049, 0);
+      modbus_write_bit(ctx_plc, 2050, 0);
+      modbus_write_bit(ctx_plc, 2051, 1);
+      left_plc = 325;
+      right_plc = 325;
+    }
 
-    // else if(linear_x == 0.0 && diff_lr_plc > diff_lr_plc_threshold_r)
+    else if(linear_x == 0.0 && diff_lr_plc > diff_lr_plc_threshold_r)
+    {
+      RCLCPP_INFO(this->get_logger(), "IInaxis turn Right");
+      modbus_write_bit(ctx_plc, 2048, 0);
+      modbus_write_bit(ctx_plc, 2049, 1);
+      modbus_write_bit(ctx_plc, 2050, 1);
+      modbus_write_bit(ctx_plc, 2051, 0);
+      left_plc = 325;
+      right_plc = 325;
+    }
+
+    // else if (linear_x > 0.0 && diff_lr_plc > diff_lr_plc_threshold) 
     // {
-    //   RCLCPP_INFO(this->get_logger(), "IInaxis turn Right");
     //   modbus_write_bit(ctx_plc, 2048, 0);
     //   modbus_write_bit(ctx_plc, 2049, 1);
-    //   modbus_write_bit(ctx_plc, 2050, 1);
-    //   modbus_write_bit(ctx_plc, 2051, 0);
-    //   left_plc = 325;
-    //   right_plc = 325;
+    //   modbus_write_bit(ctx_plc, 2050, 0);
+    //   modbus_write_bit(ctx_plc, 2051, 1);
+    //   RCLCPP_INFO(this->get_logger(), "Turn Right");
+    //   right_plc = right_plc;
+    //   left_plc *= 1.8;
+    //   if(left_plc>875)
+    //   {
+    //     left_plc = 875;
+    //   }
     // }
 
-    else if (linear_x > 0.0 && diff_lr_plc > diff_lr_plc_threshold) 
-    {
-      modbus_write_bit(ctx_plc, 2048, 0);
-      modbus_write_bit(ctx_plc, 2049, 1);
-      modbus_write_bit(ctx_plc, 2050, 0);
-      modbus_write_bit(ctx_plc, 2051, 1);
-      RCLCPP_INFO(this->get_logger(), "Turn Right");
-      right_plc = right_plc;
-      left_plc *= 1.8;
-      if(left_plc>875)
-      {
-        left_plc = 875;
-      }
-    }
-
-    else if (linear_x > 0.0 && diff_lr_plc < -diff_lr_plc_threshold) 
-    {
-      modbus_write_bit(ctx_plc, 2048, 0);
-      modbus_write_bit(ctx_plc, 2049, 1);
-      modbus_write_bit(ctx_plc, 2050, 0);
-      modbus_write_bit(ctx_plc, 2051, 1);
-      RCLCPP_INFO(this->get_logger(), "Turn Left");
-      right_plc *= 1.8;
-      left_plc = left_plc;
-      if(right_plc>875)
-      {
-        right_plc = 875;
-      }
-    }
+    // else if (linear_x > 0.0 && diff_lr_plc < -diff_lr_plc_threshold) 
+    // {
+    //   modbus_write_bit(ctx_plc, 2048, 0);
+    //   modbus_write_bit(ctx_plc, 2049, 1);
+    //   modbus_write_bit(ctx_plc, 2050, 0);
+    //   modbus_write_bit(ctx_plc, 2051, 1);
+    //   RCLCPP_INFO(this->get_logger(), "Turn Left");
+    //   right_plc *= 1.8;
+    //   left_plc = left_plc;
+    //   if(right_plc>875)
+    //   {
+    //     right_plc = 875;
+    //   }
+    // }
 
     
 
