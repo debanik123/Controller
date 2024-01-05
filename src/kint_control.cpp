@@ -177,7 +177,7 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
 
     else if (linear_x > 0.0 && diff_lr_plc > diff_lr_plc_threshold) 
     {
-      RCLCPP_INFO(this->get_logger(), "turn Right");
+      RCLCPP_INFO(this->get_logger(), "turn FW Right");
       modbus_write_bit(ctx_plc, 2048, 0);
       modbus_write_bit(ctx_plc, 2049, 1);
       modbus_write_bit(ctx_plc, 2050, 1);
@@ -188,7 +188,7 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
 
     else if (linear_x > 0.0 && diff_lr_plc < -diff_lr_plc_threshold) 
     {
-      RCLCPP_INFO(this->get_logger(), "turn left");
+      RCLCPP_INFO(this->get_logger(), "turn FW left");
       modbus_write_bit(ctx_plc, 2048, 1);
       modbus_write_bit(ctx_plc, 2049, 0);
       modbus_write_bit(ctx_plc, 2050, 0);
