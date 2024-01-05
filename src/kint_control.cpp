@@ -214,8 +214,8 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
       modbus_write_bit(ctx_plc, 2051, 1);
 
       RCLCPP_INFO(this->get_logger(), "Moving straight");
-      right_plc = right_plc*1.35;
-      left_plc = left_plc*1.35;
+      left_plc *= 1.3; // Adjust the acceleration factor as needed
+      right_plc *= 1.3;
       if(left_plc>875)
       {
         left_plc = 875;
@@ -240,8 +240,16 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
 
     else
     {
-      right_plc = 0.0;
-      left_plc = 0.0;
+        left_plc *= 0.8;
+        right_plc *= 0.8;
+        if (left_plc < 230.0)
+        {
+            left_plc = 0.0;
+        }
+        if (right_plc < 230.0)
+        {
+            right_plc = 0.0;
+        }
     }
     
     motor_write_reg[0] = right_plc;
