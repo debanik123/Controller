@@ -64,6 +64,10 @@ class kint_control : public rclcpp::Node
     modbus_t *ctx_plc = NULL;
     int status1;
 
+    double current_left_plc = 0.0;
+    double current_right_plc = 0.0;
+    const double velocity_increment = 0.1;
+
     
     
     
@@ -243,9 +247,13 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
       right_plc = 0.0;
       left_plc = 0.0;
     }
+
     
-    motor_write_reg[0] = right_plc;
-    motor_write_reg[1] = left_plc;
+    current_left_plc += velocity_increment * (left_plc - current_left_plc);
+    current_right_plc += velocity_increment * (right_plc - current_right_plc);
+
+    motor_write_reg[0] = current_left_plc;
+    motor_write_reg[1] = current_right_plc;
 
     int rc = modbus_write_registers(ctx_plc, 4096, 2, motor_write_reg);
 
