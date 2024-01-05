@@ -58,12 +58,14 @@ class kint_control : public rclcpp::Node
 
     const double min_rpm_threshold = 0.0;
     double Sqrt(double x, double y);
+    double left_wheel_vel, right_wheel_vel;
 
     const double diff_lr_plc_threshold =16.0;
     const double diff_lr_plc_threshold_r =1.0;
     double linear_x, angular_z;
     modbus_t *ctx_plc = NULL;
     int status1;
+
 
     
     
@@ -218,8 +220,8 @@ void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
     else
     {
       // Calculate left and right wheel velocities (in m/s)
-      double left_wheel_vel = linear_x - (angular_z * wheelbase / 2.0);
-      double right_wheel_vel = linear_x + (angular_z * wheelbase / 2.0);
+      left_wheel_vel = linear_x - (angular_z * wheelbase / 2.0);
+      right_wheel_vel = linear_x + (angular_z * wheelbase / 2.0);
 
       left_plc = mapFloat(left_wheel_vel, 0.0, 1.0, 220, 440);
       right_plc = mapFloat(right_wheel_vel, 0.0, 1.0, 220, 440);
