@@ -41,6 +41,9 @@ def cmd_vel_callback(msg):
     print(f"Original Left Wheel Velocity: {left_wheel_vel}, Mapped Left Wheel Velocity: {mapped_left_wheel_vel}")
     print(f"Original Right Wheel Velocity: {right_wheel_vel}, Mapped Right Wheel Velocity: {mapped_right_wheel_vel}")
 
+    diff_mapped_lr_wheel_vel = mapped_left_wheel_vel - mapped_right_wheel_vel
+    print(diff_mapped_lr_wheel_vel)
+
 def main(args=None):
     rclpy.init(args=args)
     node = rclpy.create_node('cmd_vel_subscriber')

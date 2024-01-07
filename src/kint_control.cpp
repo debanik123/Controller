@@ -175,8 +175,8 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
       modbus_write_bit(ctx_plc, 2049, 0);
       modbus_write_bit(ctx_plc, 2050, 0);
       modbus_write_bit(ctx_plc, 2051, 1);
-      left_plc = 325;
-      right_plc = 325;
+      // left_plc = 325;
+      // right_plc = 325;
     }
 
     else if(linear_x == 0.0 && diff_lr_plc > diff_lr_plc_threshold_r)
@@ -186,8 +186,8 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
       modbus_write_bit(ctx_plc, 2049, 1);
       modbus_write_bit(ctx_plc, 2050, 1);
       modbus_write_bit(ctx_plc, 2051, 0);
-      left_plc = 325;
-      right_plc = 325;
+      // left_plc = 325;
+      // right_plc = 325;
     }
     
     motor_write_reg[0] = right_plc;
@@ -221,8 +221,8 @@ void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
       double left_wheel_vel = linear_x - (angular_z * wheelbase / 2.0);
       double right_wheel_vel = linear_x + (angular_z * wheelbase / 2.0);
 
-      left_plc = mapFloat(left_wheel_vel, 0.0, 1.0, 220, 440);
-      right_plc = mapFloat(right_wheel_vel, 0.0, 1.0, 220, 440);
+      left_plc = mapFloat(left_wheel_vel, 0.0, 1.0, 220, 550);
+      right_plc = mapFloat(right_wheel_vel, 0.0, 1.0, 220, 550);
 
     }
     
