@@ -223,8 +223,8 @@ void kint_control::CmdVelCb(const geometry_msgs::msg::Twist::SharedPtr msg)
       left_wheel_vel = linear_x - (angular_z * wheelbase / 2.0);
       right_wheel_vel = linear_x + (angular_z * wheelbase / 2.0);
 
-      left_plc = mapFloat(left_wheel_vel, 0.0, 1.0, 220, 440);
-      right_plc = mapFloat(right_wheel_vel, 0.0, 1.0, 220, 440);
+      left_plc = mapFloat(left_wheel_vel, 0.0, 1.0, 220, 550);
+      right_plc = mapFloat(right_wheel_vel, 0.0, 1.0, 220, 550);
 
     }
     
