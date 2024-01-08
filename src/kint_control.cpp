@@ -175,8 +175,8 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
       modbus_write_bit(ctx_plc, 2049, 0);
       modbus_write_bit(ctx_plc, 2050, 0);
       modbus_write_bit(ctx_plc, 2051, 1);
-      // left_plc = 325;
-      // right_plc = 325;
+      left_plc = 1.5*left_plc;
+      right_plc = 1.5*right_plc;
     }
 
     else if(linear_x == 0.0 && diff_lr_plc > diff_lr_plc_threshold_r)
@@ -186,8 +186,8 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
       modbus_write_bit(ctx_plc, 2049, 1);
       modbus_write_bit(ctx_plc, 2050, 1);
       modbus_write_bit(ctx_plc, 2051, 0);
-      // left_plc = 325;
-      // right_plc = 325;
+      left_plc = 1.5*left_plc;
+      right_plc = 1.5*right_plc;
     }
     
     motor_write_reg[0] = right_plc;
