@@ -189,14 +189,14 @@ void kint_control::plc_modbus(double left_plc, double right_plc)
       modbus_write_bit(ctx_plc, 2051, 0);
     }
 
-    else if(left_wheel_vel < 0.0 && right_wheel_vel < 0.0)
-    {
-      RCLCPP_INFO(this->get_logger(), "move Back");
-      modbus_write_bit(ctx_plc, 2048, 1);
-      modbus_write_bit(ctx_plc, 2049, 0);
-      modbus_write_bit(ctx_plc, 2050, 1);
-      modbus_write_bit(ctx_plc, 2051, 0);
-    }
+    // else if(left_wheel_vel < 0.0 && right_wheel_vel < 0.0)
+    // {
+    //   RCLCPP_INFO(this->get_logger(), "move Back");
+    //   modbus_write_bit(ctx_plc, 2048, 1);
+    //   modbus_write_bit(ctx_plc, 2049, 0);
+    //   modbus_write_bit(ctx_plc, 2050, 1);
+    //   modbus_write_bit(ctx_plc, 2051, 0);
+    // }
     motor_write_reg[0] = right_plc;
     motor_write_reg[1] = left_plc;
 
